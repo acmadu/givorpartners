@@ -12,8 +12,6 @@
 #define AppVersion "1.0.0"
 #define Publisher  "GivorPartners"
 #define AppURL     "https://givorpartners.com"
-#define MerkezExe  "yazarkasa-merkez.exe"
-#define KasaExe    "yazarkasa-kasa.exe"
 
 [Setup]
 AppId={{E4F7C1A2-3B8D-4F6E-A9C5-2D1E0F8B7A63}
@@ -50,10 +48,10 @@ Name: "desktopicon_kasa";   Description: "Masaüstüne Kasa kısayolu oluştur";
 Name: "startup_kasa";       Description: "Windows başlangıcında Kasa'yı otomatik başlat"; GroupDescription: "Otomatik Başlatma:"; Flags: unchecked
 
 [Files]
-; Merkez exe
-Source: "..\dist\{#MerkezExe}"; DestDir: "{app}"; Flags: ignoreversion
-; Kasa exe
-Source: "..\dist\{#KasaExe}";   DestDir: "{app}"; Flags: ignoreversion
+; Merkez exe (Linux: yazarkasa-merkez, Windows: yazarkasa-merkez.exe)
+Source: "..\dist\yazarkasa-merkez*"; DestDir: "{app}"; Flags: ignoreversion
+; Kasa exe (Linux: yazarkasa-kasa, Windows: yazarkasa-kasa.exe)
+Source: "..\dist\yazarkasa-kasa*";   DestDir: "{app}"; Flags: ignoreversion
 ; Yapılandırma dosyası (config.json varsa üzerine yazma)
 Source: "..\config.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
 

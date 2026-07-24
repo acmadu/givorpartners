@@ -9,10 +9,11 @@ Barkod okuma:
 - Koli barkodu okutulursa koli içi adet kadar ürün sepete eklenir.
 - Kamera desteği kuruluysa "📷 Kamera" butonu ile karekod okunabilir.
 """
+import os
 from datetime import datetime
 
 from PyQt5.QtCore import QEvent, Qt, QTimer
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QIcon
 from PyQt5.QtWidgets import (
     QApplication, QDialog, QDialogButtonBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMainWindow,
     QMessageBox, QPushButton, QShortcut, QTableWidget, QTableWidgetItem,
@@ -48,6 +49,10 @@ class PosWindow(QMainWindow):
         self._terminal = PaymentTerminal(self.settings)
         self.setWindowTitle(
             f"GivorPartners — {dealer['name']} ({dealer['code']})")
+        # Favicon ayarla
+        favicon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'favicon.ico')
+        if os.path.exists(favicon_path):
+            self.setWindowIcon(QIcon(favicon_path))
         self.resize(1280, 800)
         self._build_ui()
         self._start_clock()

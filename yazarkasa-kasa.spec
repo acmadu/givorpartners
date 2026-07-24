@@ -4,6 +4,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 datas = [
     ('common', 'common'),
     ('pos', 'pos'),
+    ('assets', 'assets'),
     ('config.json', '.'),
     ('version.py', '.'),
 ]

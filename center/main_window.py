@@ -1,6 +1,7 @@
 """Merkez yönetim arayüzü — ana pencere, sayfa gezinimi ve tema seçimi."""
+import os
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QIcon, QPixmap
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QHBoxLayout, QLabel, QMainWindow, QMessageBox,
     QPushButton, QShortcut, QStackedWidget, QVBoxLayout, QWidget,
@@ -32,6 +33,10 @@ class CenterWindow(QMainWindow):
         self.settings = settings
         self.setWindowTitle("GivorPartners — Merkez Yönetim")
         self.resize(1280, 800)
+        # Favicon ayarla
+        favicon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'favicon.ico')
+        if os.path.exists(favicon_path):
+            self.setWindowIcon(QIcon(favicon_path))
         self._build_ui()
         self._check_expiry_alerts()
 
@@ -49,12 +54,21 @@ class CenterWindow(QMainWindow):
         sidebar_layout.setContentsMargins(14, 24, 14, 24)
         sidebar_layout.setSpacing(6)
 
-        logo = QLabel("◈ GivorPartners")
-        logo.setObjectName("logoText")
+        # Logo ekleme
+        logo = QLabel()
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'givor_256.png')
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path).scaledToWidth(128, Qt.SmoothTransformation)
+            logo.setPixmap(pixmap)
+            logo.setAlignment(Qt.AlignCenter)
+        else:
+            # Fallback
+            logo.setText("◈ GivorPartners")
+            logo.setObjectName("logoText")
         subtitle = QLabel("Merkez Yönetim Paneli")
         subtitle.setObjectName("subtitle")
-        sidebar_layout.addWidget(logo)
-        sidebar_layout.addWidget(subtitle)
+        sidebar_layout.addWidget(logo, alignment=Qt.AlignCenter)
+        sidebar_layout.addWidget(subtitle, alignment=Qt.AlignCenter)
         sidebar_layout.addSpacing(28)
 
         self.pages = QStackedWidget()

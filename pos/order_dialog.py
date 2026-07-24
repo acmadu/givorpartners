@@ -32,10 +32,10 @@ class OrderDialog(QDialog):
         layout.addWidget(title)
 
         # Siparişe eklenecek ürünler tablosu
-        layout.addWidget(QLabel("Siparişe Eklenecek Ürünler:"))
+        layout.addWidget(QLabel("Siparişe Eklenecek Ürünler (Sadece Koliyle):"))
         self.table = QTableWidget(0, 5)
         self.table.setHorizontalHeaderLabels(
-            ["Barkod", "Ürün Adı", "Birim Fiyat ₺", "Koli Adet", "Toplam ₺"])
+            ["Barkod", "Ürün Adı", "Birim Fiyat ₺", "Koli Adet (Min: 1)", "Toplam ₺"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
@@ -140,7 +140,7 @@ class OrderDialog(QDialog):
         self._update_total()
 
     def _update_total(self):
-        """Toplam tutar ve satır toplamlarını güncelle."""
+        """Toplam tutar ve satır toplamlarını güncelle. Koli adetini minimum 1'e kısıtla."""
         self.table.blockSignals(True)
         total = 0.0
         for row in range(self.table.rowCount()):
@@ -151,7 +151,18 @@ class OrderDialog(QDialog):
                 if not price_item or not qty_item or not total_item:
                     continue
                 price = float(price_item.text() or 0)
-                qty = float(qty_item.text() or 0)
+                qty_text = qty_item.text().strip()
+                
+                # Koli adetini sadece tam sayı ve minimum 1 yap
+                try:
+                    qty = int(qty_text)
+                    if qty < 1:
+                        qty = 1
+                        qty_item.setText("1")
+                except ValueError:
+                    qty = 1
+                    qty_item.setText("1")
+                
                 line_total = price * qty
                 total_item.setText(f"{line_total:.2f}")
                 total += line_total
@@ -172,7 +183,7 @@ class OrderDialog(QDialog):
             self.dekont_label.setText(f"✓ {filename}")
 
     def _validate_and_accept(self):
-        """Siparişi doğrula ve gönder."""
+        """Siparişi doğrula ve gönder. Sadece koli bazlı sipariş (minimum 1)."""
         if self.table.rowCount() == 0:
             QMessageBox.warning(self, "Boş Sipariş",
                                 "Lütfen en az bir ürün ekleyin.")
@@ -185,11 +196,20 @@ class OrderDialog(QDialog):
                 barcode = self.table.item(row, 0).text()
                 name = self.table.item(row, 1).text()
                 price = float(self.table.item(row, 2).text() or 0)
-                qty_text = self.table.item(row, 3).text()
-                qty = float(qty_text or 0) if qty_text else 0
-
-                if qty <= 0:
-                    continue
+                qty_text = self.table.item(row, 3).text().strip()
+                
+                # Koli adetini tam sayı ve minimum 1 olacak şekilde dönüştür
+                try:
+                    qty = int(qty_text)
+                except ValueError:
+                    QMessageBox.warning(self, "Hata", 
+                                      f"Satır {row + 1}: Koli adet tam sayı olmalı!")
+                    return
+                
+                if qty < 1:
+                    QMessageBox.warning(self, "Geçersiz Koli Adet",
+                                      f"Satır {row + 1}: Koli adet en az 1 olmalı!")
+                    return
 
                 items.append({
                     "barcode": barcode,
