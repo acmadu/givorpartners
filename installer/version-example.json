@@ -1,0 +1,7 @@
+{
+  "version": "1.0.1",
+  "download_url_windows": "https://github.com/GITHUB_KULLANICI/givorpartners/releases/download/v1.0.1/givorpartners-setup-v1.0.1.exe",
+  "download_url_linux": "https://github.com/GITHUB_KULLANICI/givorpartners/releases/download/v1.0.1/givorpartners-kasa-v1.0.1.AppImage",
+  "download_url_mac": "https://github.com/GITHUB_KULLANICI/givorpartners/releases/download/v1.0.1/givorpartners-linux-v1.0.1.tar.gz",
+  "changelog": "v1.0.1 - 2026-07-24\n\n• Müşteri bilgisi girişi artık isteğe bağlı (Atla butonu eklendi)\n• Bayi panel butonları sadeleştirildi\n• Yazı boyutu ayarı eklendi (Yazı Boyutu butonu)\n• Satış detayı diyaloğu iyileştirildi\n• Küçük hata düzeltmeleri"
+}

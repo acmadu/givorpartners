@@ -1,0 +1,8 @@
+# Zorunlu bağımlılıklar
+PyQt5>=5.15
+pymongo>=4.6
+
+# Kamera ile karekod okuma (isteğe bağlı)
+# Sistem gereksinimi: zbar kütüphanesi (Fedora: sudo dnf install zbar / Windows: otomatik)
+# opencv-python>=4.9
+# pyzbar>=0.1.9
