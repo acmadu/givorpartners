@@ -240,6 +240,11 @@ class PosWindow(QMainWindow):
         cancel.setMinimumHeight(44)
         cancel.clicked.connect(self._clear_cart)
 
+        # ── POS Ayarları ──
+        pos_settings_btn = QPushButton("⚙  POS Terminal Ayarları")
+        pos_settings_btn.setMinimumHeight(44)
+        pos_settings_btn.clicked.connect(self._open_pos_settings)
+
         right.addWidget(cash)
         right.addWidget(card)
         right.addSpacing(4)
@@ -255,6 +260,7 @@ class PosWindow(QMainWindow):
         right.addWidget(order_return)
         right.addWidget(refund)
         right.addStretch()
+        right.addWidget(pos_settings_btn)
         right.addWidget(cancel)
 
         body.addWidget(right_panel, 1)
@@ -426,6 +432,18 @@ class PosWindow(QMainWindow):
         self._render_cart()
         self._show_info("", style.palette()["muted"])
         self.barcode_input.setFocus()
+
+    def _open_pos_settings(self):
+        from pos.pos_settings_dialog import PosSettingsDialog
+        dlg = PosSettingsDialog(self)
+        if dlg.exec_():
+            # Ayarlar kaydedildi — terminal nesnesini yenile
+            from common.settings import load_settings
+            from pos.payment_terminal import PaymentTerminal
+            self.settings = load_settings()
+            self._terminal = PaymentTerminal(self.settings)
+            mode = self.settings.get("terminal_mode", "manual")
+            self._show_info(f"POS modu güncellendi: {mode}", style.palette()["green"])
 
     # -------------------------------------------------------------- Satış
     def _payment_with_customer_info(self, payment_type: str):

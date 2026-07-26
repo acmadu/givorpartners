@@ -42,6 +42,7 @@ class TerminalMode(str, Enum):
     INGENICO = "ingenico"
     SERIAL   = "serial"
     TCP      = "tcp"
+    SIMULATE = "simulate"
 
 
 @dataclass
@@ -82,6 +83,8 @@ class PaymentTerminal:
         """Terminale ödeme isteği gönderir; sonucu döndürür."""
         if self.mode == TerminalMode.MANUAL:
             return PaymentResult(approved=None, amount=amount)
+        if self.mode == TerminalMode.SIMULATE:
+            return self._simulate_payment(amount)
         if self.mode == TerminalMode.INGENICO:
             return self._ingenico_payment(amount)
         if self.mode == TerminalMode.SERIAL:
@@ -95,6 +98,8 @@ class PaymentTerminal:
         """Terminal bağlantısını test eder. (ok, mesaj)"""
         if self.mode == TerminalMode.MANUAL:
             return True, "Manuel mod — bağlantı testi gerekmez."
+        if self.mode == TerminalMode.SIMULATE:
+            return True, "Simülasüon modu aktif — gerçek terminal gerekmez."
         if self.mode == TerminalMode.INGENICO:
             return self._test_tcp(self.host,
                                   self.tcp_port if self.tcp_port else 8400)
@@ -182,6 +187,28 @@ class PaymentTerminal:
             auth_code=auth_code if approved else "",
             ref_no=ref_no if approved else "",
             error_message="" if approved else f"Hata kodu: {resp_code}",
+        )
+
+    # --------------------------------------------------------- Simülasüon
+    def _simulate_payment(self, amount: float) -> PaymentResult:
+        """
+        Simülasüon modu: PyQt5 dialog ile kullanıcıya onay/ret sor.
+        Bu metot arka plan thread'inden çağrılır, PyQt5 sinyali ile
+        ana thread'e görev göndermek yerine blocking QMessageBox yerine
+        bir sentinel PaymentResult döndürür.
+        Gerçek dialog CardPaymentDialog tarafından simülasüon modünde
+        farklı render edilir.
+        """
+        import random, time
+        time.sleep(1.5)   # gerçek terminal gecikmesi simüle et
+        # Sahte onay verisi üret
+        auth = f"{random.randint(100000, 999999)}"
+        ref  = f"{random.randint(10**11, 10**12 - 1)}"
+        last4 = f"{random.randint(1000, 9999)}"
+        return PaymentResult(
+            approved=True, amount=amount,
+            auth_code=auth, ref_no=ref, card_last4=last4,
+            error_message=""
         )
 
     # --------------------------------------------------------- Ingenico TCP

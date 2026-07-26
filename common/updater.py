@@ -127,22 +127,112 @@ class UpdateChecker:
 _checker = UpdateChecker()
 
 
-def check_for_update(parent_widget=None) -> None:
+def check_for_update(parent_widget=None, *, auto_update: bool = False,
+                     min_version: str | None = None) -> None:
     """
     Açılışta arka planda güncelleme kontrolü yap.
-    Yeni sürüm varsa UpdateDialog'u göster.
+
+    auto_update  : True → kullanıcı onayı beklemeden sessizce indir ve yeniden başlat.
+    min_version  : Bu sürümden düşükse zorunlu güncelleme dialog açılır (kapatılamaz).
     parent_widget: ana pencere (QWidget), bildirim için kullanılır.
     """
     def _bg():
-        if _checker.fetch():
-            # Ana thread'de dialog aç
-            from PyQt5.QtCore import QMetaObject, Qt, Q_ARG
-            from PyQt5.QtWidgets import QApplication
-            app = QApplication.instance()
-            if app:
-                app.postEvent(app, _ShowUpdateEvent(parent_widget, _checker))
+        has_update = _checker.fetch()
+        from PyQt5.QtWidgets import QApplication
+        app = QApplication.instance()
+        if not app:
+            return
+
+        # ── Zorunlu güncelleme kontrolü ──
+        if min_version and _version_tuple(VERSION) < _version_tuple(min_version):
+            app.postEvent(app, _ShowUpdateEvent(parent_widget, _checker, forced=True))
+            return
+
+        if not has_update:
+            return
+
+        # ── Sessiz otomatik güncelleme ──
+        if auto_update and _checker.download_url:
+            ok = _download_and_replace(_checker.download_url)
+            if ok and platform.system() != "Windows":
+                pass  # os.execv zaten yeniden başlattı
+            elif ok and platform.system() == "Windows":
+                app.quit()
+            return
+
+        # ── Normal bildirim dialog ──
+        app.postEvent(app, _ShowUpdateEvent(parent_widget, _checker, forced=False))
 
     threading.Thread(target=_bg, daemon=True).start()
+
+
+def check_min_version(min_version: str | None, parent_widget=None) -> bool:
+    """
+    Sync olarak min_version kontrolü yapar.
+    Mevcut sürüm yeterliyse True döner, yoksa zorunlu güncelleme dialog'u açar
+    ve False döner (uygulama açılmamalı).
+    """
+    if not min_version:
+        return True
+    if _version_tuple(VERSION) >= _version_tuple(min_version):
+        return True
+
+    # Sürüm yetersiz — güncelleme zorunlu
+    try:
+        from PyQt5.QtWidgets import (
+            QDialog, QVBoxLayout, QLabel, QPushButton, QProgressBar, QApplication
+        )
+        from PyQt5.QtCore import Qt
+
+        _checker.fetch()   # download_url için gerekli
+
+        dlg = QDialog(parent_widget)
+        dlg.setWindowTitle("⛔ Güncelleme Zorunlu — GivorPartners")
+        dlg.setMinimumWidth(440)
+        dlg.setModal(True)
+        dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowCloseButtonHint)
+
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(12)
+
+        lay.addWidget(QLabel(
+            f"<b>Bu sürüm (v{VERSION}) artık desteklenmiyor.</b><br>"
+            f"Devam edebilmek için güncellemeniz gerekmektedir.<br>"
+            f"Gerekli sürüm: <b>v{min_version}</b>",
+        ))
+
+        progress = QProgressBar()
+        progress.setRange(0, 100)
+        progress.setVisible(False)
+        lay.addWidget(progress)
+
+        status_lbl = QLabel("")
+        lay.addWidget(status_lbl)
+
+        btn = QPushButton("⬇  Güncelle ve Yeniden Başlat", objectName="primary")
+
+        def _do():
+            btn.setEnabled(False)
+            progress.setVisible(True)
+            status_lbl.setText("İndiriliyor...")
+
+            def _run():
+                ok = _download_and_replace(_checker.download_url, lambda p: progress.setValue(p))
+                if ok and platform.system() == "Windows":
+                    status_lbl.setText("Yeniden başlatılıyor...")
+                    import time; time.sleep(1)
+                    QApplication.instance().quit()
+
+            threading.Thread(target=_run, daemon=True).start()
+
+        btn.clicked.connect(_do)
+        lay.addWidget(btn)
+        dlg.exec_()
+    except Exception as e:
+        print(f"[Güncelleme] Zorunlu güncelleme dialog hatası: {e}")
+
+    return False
 
 
 # ── Güncelleme olayı ──────────────────────────────────────────
@@ -152,10 +242,11 @@ _UPDATE_EVENT_TYPE = QEvent.registerEventType()
 
 
 class _ShowUpdateEvent(QEvent):
-    def __init__(self, parent, checker: UpdateChecker):
+    def __init__(self, parent, checker: UpdateChecker, forced: bool = False):
         super().__init__(QEvent.Type(_UPDATE_EVENT_TYPE))
         self.parent = parent
         self.checker = checker
+        self.forced = forced
 
 
 def install_event_filter(app, parent_widget):
@@ -166,7 +257,7 @@ def install_event_filter(app, parent_widget):
     class _Filter(QObject):
         def eventFilter(self, obj, event):
             if event.type() == _UPDATE_EVENT_TYPE:
-                _show_update_dialog(event.parent, event.checker)
+                _show_update_dialog(event.parent, event.checker, forced=event.forced)
                 return True
             return False
 
@@ -175,7 +266,7 @@ def install_event_filter(app, parent_widget):
     app._update_filter = _f  # GC'den korunması için referansı tut
 
 
-def _show_update_dialog(parent, checker: UpdateChecker):
+def _show_update_dialog(parent, checker: UpdateChecker, forced: bool = False):
     """Güncelleme dialog'unu göster."""
     try:
         from PyQt5.QtWidgets import (
@@ -187,7 +278,9 @@ def _show_update_dialog(parent, checker: UpdateChecker):
         dlg = QDialog(parent)
         dlg.setWindowTitle("🔄 Güncelleme Mevcut — GivorPartners")
         dlg.setMinimumWidth(480)
-        dlg.setModal(False)  # Kullanıcı ödeme sırasında değilse
+        dlg.setModal(forced)
+        if forced:
+            dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowCloseButtonHint)
 
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(24, 24, 24, 24)
@@ -195,7 +288,8 @@ def _show_update_dialog(parent, checker: UpdateChecker):
 
         lay.addWidget(QLabel(
             f"<b>Yeni sürüm v{checker.remote_version} mevcut!</b><br>"
-            f"Mevcut sürümünüz: v{VERSION}",
+            f"Mevcut sürümünüz: v{VERSION}"
+            + ("<br><b style='color:red'>⛔ Bu sürüm zorunlu güncelleme gerektiriyor!</b>" if forced else ""),
             objectName="title"
         ))
 
@@ -216,8 +310,10 @@ def _show_update_dialog(parent, checker: UpdateChecker):
         lay.addWidget(status_lbl)
 
         btn_row = QHBoxLayout()
-        later_btn = QPushButton("Sonra Hatırlat")
-        later_btn.clicked.connect(dlg.reject)
+        if not forced:
+            later_btn = QPushButton("Sonra Hatırlat")
+            later_btn.clicked.connect(dlg.reject)
+            btn_row.addWidget(later_btn)
         update_btn = QPushButton("⬇  Şimdi Güncelle", objectName="primary")
 
         def _do_update():
@@ -242,7 +338,8 @@ def _show_update_dialog(parent, checker: UpdateChecker):
                 else:
                     status_lbl.setText("İndirme başarısız. İnternet bağlantınızı kontrol edin.")
                     update_btn.setEnabled(True)
-                    later_btn.setEnabled(True)
+                    if not forced:
+                        later_btn.setEnabled(True)
 
             threading.Thread(target=_run, daemon=True).start()
 

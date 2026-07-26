@@ -106,9 +106,9 @@ class DealersPage(QWidget):
         top.addWidget(add_button)
         layout.addLayout(top)
 
-        self.table = QTableWidget(0, 5)
+        self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels(
-            ["Kod", "Bayi Adı", "Adres", "Telefon", "Kasa Hesabı"])
+            ["Kod", "Bayi Adı", "Adres", "Telefon", "Kasa Hesabı", "AnyDesk ID"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -122,7 +122,10 @@ class DealersPage(QWidget):
         edit_button.clicked.connect(self._edit_dealer)
         delete_button = QPushButton("🗑 Sil", objectName="danger")
         delete_button.clicked.connect(self._delete_dealer)
+        self.anydesk_btn = QPushButton("🖥 AnyDesk ile Bağlan")
+        self.anydesk_btn.clicked.connect(self._open_anydesk)
         bottom.addStretch()
+        bottom.addWidget(self.anydesk_btn)
         bottom.addWidget(edit_button)
         bottom.addWidget(delete_button)
         layout.addLayout(bottom)
@@ -137,10 +140,49 @@ class DealersPage(QWidget):
             account = dealer.get("username")
             self.table.setItem(row, 4, QTableWidgetItem(
                 f"🔑 {account}" if account else "—"))
+            anydesk_id = dealer.get("anydesk_id", "")
+            self.table.setItem(row, 5, QTableWidgetItem(
+                anydesk_id if anydesk_id else "—"))
 
     def _selected_code(self) -> str:
         row = self.table.currentRow()
         return self.table.item(row, 0).text() if row >= 0 else ""
+
+    def _open_anydesk(self):
+        """Seçili bayinin AnyDesk ID'sini kopyala veya AnyDesk ile bağlan."""
+        import shutil, subprocess, platform
+        from PyQt5.QtWidgets import QApplication
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.information(self, "Seçim Yok", "Lütfen bir bayi seçin.")
+            return
+        item = self.table.item(row, 5)
+        anydesk_id = item.text() if item else ""
+        if not anydesk_id or anydesk_id == "—":
+            QMessageBox.information(
+                self, "AnyDesk ID Yok",
+                "Bu bayinin AnyDesk ID'si henüz kaydedilmedi.\n"
+                "Bayi programının en az bir kez açılması gerekiyor."
+            )
+            return
+        # AnyDesk kuruluysa direkt bağlan, değilse ID'yi panoya kopyala
+        exe = (
+            r"C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
+            if platform.system() == "Windows" else shutil.which("anydesk")
+        )
+        if exe:
+            try:
+                subprocess.Popen([exe, anydesk_id])
+                return
+            except Exception:
+                pass
+        # Fallback: panoya kopyala
+        QApplication.clipboard().setText(anydesk_id)
+        QMessageBox.information(
+            self, "AnyDesk ID Kopyalandı",
+            f"Bayi AnyDesk ID'si panoya kopyalandı:\n{anydesk_id}\n\n"
+            "AnyDesk'te bu ID'yi girerek bağlanabilirsiniz."
+        )
 
     def _add_dealer(self):
         dialog = DealerDialog(self)

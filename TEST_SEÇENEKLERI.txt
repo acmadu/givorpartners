@@ -1,0 +1,169 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║          POS TERMİNAL TEST — GERÇEK TERMINAL OLMADAN TEST ET                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+SEÇENEK 1: SİMÜLASYON MODU (En Hızlı — 2 dakika)
+═══════════════════════════════════════════════════════════════════════════════
+
+Hiçbir kurulum gerektirmeyen, tamamen yazılım içinde test.
+
+KOMUT:
+  $ python3 test_pos_quick.py simulate
+
+SONRA:
+  1. Kasa açılır
+  2. Herhangi bir satış yap (ürün taşıyıcı vb.)
+  3. "💳 KREDİ KARTI" butonuna tık
+  4. Ekranda "🧪 SİMÜLASYON MODU" yazısı çıkar
+  5. "✔ Onaylandı" butonuna tık
+  6. Ödeme kaydedilir ✅
+
+ÖZELLİKLER:
+  ✅ Kurulumsuz test
+  ✅ Gerçek kart bilgisi gelmez
+  ✅ Sahte onay kodu üretilir
+  ✅ Satış veritabanına kaydedilir
+  ✅ İstanbul'da test et, gönder
+
+
+SEÇENEK 2: MOCK İNGENİCO SUNUCUSU (Gerçekçi — 15 dakika)
+═══════════════════════════════════════════════════════════════════════════════
+
+Bilgisayarında POS sunucusu simülasyonu çalıştır, kasa ona bağlansın.
+
+TERMINAL 1 (Sunucu):
+  $ cd ~/Desktop/yazarkasa
+  $ python3 ingenico_mock_server.py
+  
+  Çıktı:
+  🖥  Mock Ingenico POS Sunucusu başlatılıyor...
+  📡 Dinleme: 127.0.0.1:8400
+  ✅ Sunucu çalışıyor. Kasa'dan gelen bağlantıları bekliyorum...
+  (CTRL+C ile dur)
+
+TERMINAL 2 (Kasa) — BU TERMİNAL PENCERESİNDE:
+  $ python3 test_pos_quick.py mock
+  
+  Veya elle:
+  $ python3 test_pos_quick.py mock
+  # Ardından başka pencerede: python3 start_pos.py
+
+KASA AÇILINCA:
+  1. "⚙ POS Terminal Ayarları" tık
+  2. "🔌 Bağlantı Testi" → ✅ başarılı görünür
+  3. "💾 Kaydet"
+  4. Satış yap → "💳 KREDİ KARTI"
+  5. Belki sekonder 2-3 saniye bekle
+  6. Terminal onay döndürür → satış tamamlanır
+
+SUNUCU TARAFINDA GÖRÜRSÜN:
+  [Bağlantı] 127.0.0.1:... bağlandı
+  [İstek] 0200 - 123.45 ₺ (949)
+  [Yanıt] Onaylı — Auth: 123456, Ref: 000000123456
+
+ÖZELLİKLER:
+  ✅ TCP/IP bağlantı tamamen test edilir
+  ✅ Protokol harita eşlemesi doğrulanır
+  ✅ Gerçek Ingenico testine en yakın
+  ✅ Sorun gidermek için ideal
+
+
+SEÇENEK 3: GERÇEK INGENICO (İstanbul — 5 dakika)
+═══════════════════════════════════════════════════════════════════════════════
+
+Gerçek Ingenico Terminaline bağlan.
+
+HAZIRLIK:
+  1. Terminal açılır
+  2. Settings / Ayarlar → Ağ Ayarları bölümüne git
+  3. Terminal IP'sini bul (genellikle 192.168.X.X)
+  4. Varsayılan port: 8400
+
+KASA AYARLANSI:
+  $ python3 start_pos.py
+  
+  Kasa açılır → "⚙ POS Terminal Ayarları":
+    • Mod: "ingenico"
+    • IP: [terminal'in IP'si — örn 192.168.1.50]
+    • Port: 8400
+    • "🔌 Bağlantı Testi" → Çıkmazsa IP kontrol et
+    • "💾 Kaydet"
+
+TEST:
+  1. Satış yap
+  2. "💳 KREDİ KARTI" tık
+  3. Terminal ekranında ödeme sayfası açılır (veya okuyucu/PINpad aktif olur)
+  4. Müşteri kartını okuttur/PINi girer
+  5. Kasada "✅ Ödeme onaylandı!" görünür
+
+SORUN GIDERİCİ:
+  ❌ "TCP bağlantısı başarısız"
+    → PC ve Terminal aynı WiFi/LAN'da mı?
+    → Terminal IP doğru mu? (ping ile test et)
+    → Terminal açık mı? (menüde kontrol et)
+    → Güvenlik duvarı port 8400'ü kapatmış mı?
+
+  ❌ Bağlantı sağlandı ama ödeme başlamıyor
+    → Terminal modunu kontrol et (BİKİ VS EFT vs internet)
+    → Pos üreticisine başvur
+
+
+HIZLI REFERANS (Terminal IP Bulma)
+═══════════════════════════════════════════════════════════════════════════════
+
+PC'de Terminal IP'si araştırma:
+  • Windows: ping 192.168.1.* (ağdaki cihazları tara)
+  • Linux: nmap 192.168.1.0/24 (nmap kurlu gerekir)
+  • Terminal ekranında admin menüsü
+
+Mock Sunucusu çıktı örneği:
+  Terminal 1 (sunucu):      Terminal 2 (kasa):
+  ✅ Sunucu çalışıyor        ⚙ POS Ayarları
+                            IP: 127.0.0.1
+                            Port: 8400
+                            🔌 Test → ✅ Başarılı
+                            💳 KREDİ KARTI
+  [Bağlantı] 127.0.0.1:...   ⏳ Terminal bekleniyor
+  [İstek] 0200 - 123.45 ₺    ⏳ Terminal bekleniyor
+  [Yanıt] Onaylı             ✅ Ödeme onaylandı!
+
+
+ÖNERİLEN TEST SIRASI
+═══════════════════════════════════════════════════════════════════════════════
+
+İlk (bugün):       python3 test_pos_quick.py simulate
+                   → Simülasyon ile temel akış test et
+
+İkinci (bugün):    python3 test_pos_quick.py mock
+                   → TCP/IP protokol test et
+
+Üçüncü (İstanbul): Gerçek Ingenico ile test et
+                   → Alan test öncesi
+
+Sonra: USB_PAKET/'deki exe'leri bayilere gönder
+
+
+HATA GÜNLÜĞÜ
+═══════════════════════════════════════════════════════════════════════════════
+
+Kasa günlüğü: ~/.local/share/givorpartners/ (Linux) veya %APPDATA% (Windows)
+
+Mock sunucusundan ek log almak:
+  python3 ingenico_mock_server.py 2>&1 | tee mock_server.log
+
+Kasa POS debug:
+  Ödeme ekranında "İptal"ya bas, hatayı kontrol et
+
+Bağlantı test etme (komut satırından):
+  python3 -c "
+  import socket
+  s = socket.socket()
+  try:
+    s.connect(('192.168.1.50', 8400))
+    print('✅ Bağlantı başarılı')
+  except Exception as e:
+    print(f'❌ {e}')
+  finally:
+    s.close()
+  "
+

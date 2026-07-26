@@ -129,7 +129,10 @@ Bayi bilgisayarında:
 chmod +x givorpartners-kasa-v1.0.0.AppImage
 ./givorpartners-kasa-v1.0.0.AppImage
 ```
-
+cd /home/alp/Desktop/yazarkasa
+git push -u origin main
+git tag v1.0.0
+git push origin v1.0.0
 ### .deb Paketi (Ubuntu / Debian)
 ```bash
 ./installer/build_deb.sh her ikisi

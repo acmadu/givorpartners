@@ -100,6 +100,15 @@ class CardPaymentDialog(QDialog):
                 "İşlem tamamlandığında aşağıdan sonucu seçin.")
             return
 
+        if mode == TerminalMode.SIMULATE:
+            self.status_label.setText(
+                "🧪  SİMÜLASYON MODU\n\n"
+                "Gerçek POS bağlantısı yok.\n"
+                "Test için aşağıdan sonucu seçin.")
+            self.status_label.setStyleSheet(
+                "color: #e67e22; font-weight: bold; font-size: 14px;")
+            return
+
         # Ingenico / Seri / TCP — arka planda gönder
         mode_label = {
             TerminalMode.INGENICO: "Ingenico terminal",
@@ -164,8 +173,7 @@ class CardPaymentDialog(QDialog):
         self.cancel_button.clicked.connect(self.accept)
 
     def _manual_approve(self):
-        self.result = PaymentResult(
-            approved=True, amount=self.amount, auth_code="", ref_no="")
+        self.result = PaymentResult(approved=True, amount=self.amount, auth_code="", ref_no="")
         self.accept()
 
     def _manual_decline(self):
