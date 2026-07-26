@@ -308,7 +308,7 @@ class PosWindow(QMainWindow):
         row += 1
         buttons_grid.addWidget(cancel_btn, row, 0, 1, 2)
         row += 1
-        buttons_grid.addStretch()
+        buttons_grid.setRowStretch(row, 1)
         
         scroll.setWidget(buttons_container)
         right.addWidget(scroll)
