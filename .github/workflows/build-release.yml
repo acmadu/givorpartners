@@ -39,29 +39,6 @@ jobs:
       - name: Build kasa
         run: pyinstaller yazarkasa-kasa.spec
 
-      - name: Install Inno Setup
-        run: choco install innosetup --no-progress -y
-
-      - name: Build installer
-        shell: python
-        run: |
-          import subprocess
-          import re
-          tag = "${{ github.ref_name }}"
-          version = tag.lstrip("v")
-          
-          # Update ISS file
-          with open("installer/yazarkasa-setup.iss", "r", encoding="utf-8") as f:
-              content = f.read()
-          content = re.sub(r'#define AppVersion ".*"', f'#define AppVersion "{version}"', content)
-          content = re.sub(r'OutputBaseFilename=.*', f'OutputBaseFilename=GivorPartners-Setup-v{version}', content)
-          with open("installer/yazarkasa-setup.iss", "w", encoding="utf-8") as f:
-              f.write(content)
-          
-          # Run Inno Setup
-          iscc_path = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          subprocess.run([iscc_path, "installer/yazarkasa-setup.iss"], check=True)
-
       - name: Create version.json
         shell: python
         run: |
@@ -72,7 +49,8 @@ jobs:
           base = f"https://github.com/{repo}/releases/download/{tag}"
           data = {
               "version": version,
-              "download_url_windows": f"{base}/GivorPartners-Setup-v{version}.exe",
+              "download_url_windows_merkez": f"{base}/yazarkasa-merkez.exe",
+              "download_url_windows_kasa": f"{base}/yazarkasa-kasa.exe",
               "download_url_linux": f"{base}/givorpartners-kasa-v{version}.AppImage",
               "changelog": "Yeni surum"
           }
@@ -83,7 +61,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            installer/Output/*.exe
             dist/yazarkasa-merkez.exe
             dist/yazarkasa-kasa.exe
             version.json
