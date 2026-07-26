@@ -150,7 +150,6 @@ QPushButton {{
     padding: {int(14 * FONT_SCALE)}px {int(22 * FONT_SCALE)}px;
     font-size: {base_font}px;
     font-weight: 500;
-    qproperty-wordWrap: true;
     min-height: {int(48 * FONT_SCALE)}px;
 }}
 QPushButton:hover {{
@@ -169,7 +168,6 @@ QPushButton#primary {{
     color: {p["on_accent"]};
     font-weight: 600;
     min-height: 56px;
-    qproperty-wordWrap: true;
     padding: 14px 22px;
     font-size: {base_font}px;
 }}
@@ -187,7 +185,6 @@ QPushButton#success {{
     color: white;
     font-weight: 600;
     min-height: 56px;
-    qproperty-wordWrap: true;
     padding: 14px 22px;
     font-size: {base_font}px;
 }}
@@ -200,7 +197,6 @@ QPushButton#secondary {{
     border: 1px solid {p["border"]};
     color: {p["text"]};
     font-weight: 500;
-    qproperty-wordWrap: true;
     min-height: {int(48 * FONT_SCALE)}px;
     padding: 12px 18px;
     font-size: {base_font}px;
@@ -221,7 +217,6 @@ QPushButton#danger {{
     color: white;
     font-weight: 600;
     min-height: 52px;
-    qproperty-wordWrap: true;
     padding: 14px 22px;
     font-size: {base_font}px;
 }}
