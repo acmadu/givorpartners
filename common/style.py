@@ -147,9 +147,10 @@ QPushButton {{
     background-color: {p["card"]};
     border: 1px solid {p["border"]};
     border-radius: 10px;
-    padding: {int(11 * FONT_SCALE)}px {int(20 * FONT_SCALE)}px;
+    padding: {int(14 * FONT_SCALE)}px {int(24 * FONT_SCALE)}px;
     font-size: {base_font}px;
     font-weight: 500;
+    min-height: 44px;
 }}
 QPushButton:hover {{
     background-color: {p["hover"]};
@@ -166,6 +167,7 @@ QPushButton#primary {{
     border: none;
     color: {p["on_accent"]};
     font-weight: 600;
+    min-height: 64px;
 }}
 QPushButton#primary:hover {{
     background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -180,10 +182,27 @@ QPushButton#success {{
     border: none;
     color: white;
     font-weight: 600;
+    min-height: 64px;
 }}
 QPushButton#success:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
         stop:0 {p["green"]}, stop:1 {p["green"]});
+}}
+QPushButton#secondary {{
+    background-color: {p["panel"]};
+    border: 1px solid {p["border"]};
+    color: {p["text"]};
+    font-weight: 500;
+    min-height: 48px;
+}}
+QPushButton#secondary:hover {{
+    background-color: {p["hover"]};
+    border-color: {p["secondary"]};
+    color: {p["secondary"]};
+}}
+QPushButton#secondary:pressed {{
+    background-color: {p["pressed"]};
+    border-color: {p["secondary"]};
 }}
 QPushButton#danger {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -191,6 +210,7 @@ QPushButton#danger {{
     border: none;
     color: white;
     font-weight: 600;
+    min-height: 56px;
 }}
 QPushButton#danger:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,

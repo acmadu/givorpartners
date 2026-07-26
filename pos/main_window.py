@@ -182,13 +182,13 @@ class PosWindow(QMainWindow):
         cart_buttons.addStretch()
         left.addLayout(cart_buttons)
 
-        body.addLayout(left, 3)
+        body.addLayout(left, 7)
 
         # ---------------- Sağ: toplam + ödeme ----------------
         right_panel = QWidget(objectName="card")
         right = QVBoxLayout(right_panel)
-        right.setContentsMargins(24, 24, 24, 24)
-        right.setSpacing(14)
+        right.setContentsMargins(28, 28, 28, 28)
+        right.setSpacing(18)
 
         right.addWidget(QLabel("GENEL TOPLAM", objectName="cardTitle"))
         self.total_label = QLabel("0,00 ₺", objectName="totalAmount")
@@ -199,145 +199,91 @@ class PosWindow(QMainWindow):
         right.addWidget(self.last_product_label)
         right.addStretch()
 
+        # ──── Ödeme butonları (Ana işlemler) ────
         cash = QPushButton("💵  NAKİT", objectName="success")
-        cash.setMinimumHeight(64)
         cash.clicked.connect(self._payment_with_customer_info("NAKİT"))
         card = QPushButton("💳  KREDİ KARTI", objectName="primary")
-        card.setMinimumHeight(64)
         card.clicked.connect(self._payment_with_customer_info("KART"))
 
-        # ── Sipariş ──
-        order = QPushButton("📋  Sipariş Ver", objectName="secondary")
-        order.setMinimumHeight(44)
-        order.clicked.connect(self._open_order_dialog)
-        receive_order = QPushButton("✓  Sipariş Teslim Al", objectName="secondary")
-        receive_order.setMinimumHeight(44)
-        receive_order.clicked.connect(self._receive_order)
-
-        # ── Depo ──
-        stock = QPushButton("📦  Depo", objectName="secondary")
-        stock.setMinimumHeight(44)
-        stock.clicked.connect(self._open_stock_dialog)
-        pending_approval = QPushButton("✓  Depo Onayları", objectName="secondary")
-        pending_approval.setMinimumHeight(44)
-        pending_approval.clicked.connect(self._open_pending_approval)
-
-        # ── Diğer ──
-        expiry_warn = QPushButton("⚠  SKT Uyarıları", objectName="secondary")
-        expiry_warn.setMinimumHeight(44)
-        expiry_warn.clicked.connect(self._open_expiry_chart)
-        analytics = QPushButton("📊  Ciro Raporu", objectName="secondary")
-        analytics.setMinimumHeight(44)
-        analytics.clicked.connect(self._open_analytics)
-
-        # ── İade ──
-        order_return = QPushButton("↩  Sipariş İadesi", objectName="secondary")
-        order_return.setMinimumHeight(44)
-        order_return.clicked.connect(self._open_order_return_dialog)
-        refund = QPushButton("🔄  Müşteri İadesi", objectName="secondary")
-        refund.setMinimumHeight(44)
-        refund.clicked.connect(self._open_return_dialog)
-
-        # ── İptal ──
-        cancel = QPushButton("✖  Satışı İptal Et", objectName="danger")
-        cancel.setMinimumHeight(44)
-        cancel.clicked.connect(self._clear_cart)
-
-        # ── POS Ayarları ──
-        pos_settings_btn = QPushButton("⚙  POS Terminal Ayarları")
-        pos_settings_btn.setMinimumHeight(44)
-        pos_settings_btn.clicked.connect(self._open_pos_settings)
-
-        # ── Kısayol Ürünleri Düğmesi ──
-        shortcut_btn = QPushButton("⭐  Kısayol Ürünleri")
-        shortcut_btn.setMinimumHeight(44)
+        # ──── Kısayol Ürünleri ────
+        shortcut_btn = QPushButton("⭐  Kısayol Ürünleri", objectName="secondary")
         shortcut_btn.clicked.connect(self._manage_shortcuts)
 
-        # ── Gün Sonu Raporu ──
-        eod_report_btn = QPushButton("📊  Gün Sonu Raporu")
-        eod_report_btn.setMinimumHeight(44)
+        # ──── Sipariş & Depo ────
+        order_btn = QPushButton("📋  Sipariş Ver", objectName="secondary")
+        order_btn.clicked.connect(self._open_order_dialog)
+        receive_order_btn = QPushButton("✓  Sipariş Teslim Al", objectName="secondary")
+        receive_order_btn.clicked.connect(self._receive_order)
+        stock_btn = QPushButton("📦  Depo", objectName="secondary")
+        stock_btn.clicked.connect(self._open_stock_dialog)
+        pending_approval_btn = QPushButton("✓  Depo Onayları", objectName="secondary")
+        pending_approval_btn.clicked.connect(self._open_pending_approval)
+
+        # ──── Raporlar ────
+        expiry_warn_btn = QPushButton("⚠  SKT Uyarıları", objectName="secondary")
+        expiry_warn_btn.clicked.connect(self._open_expiry_chart)
+        analytics_btn = QPushButton("📊  Ciro Raporu", objectName="secondary")
+        analytics_btn.clicked.connect(self._open_analytics)
+        eod_report_btn = QPushButton("📊  Gün Sonu Raporu", objectName="secondary")
         eod_report_btn.clicked.connect(self._open_eod_report)
 
-        # ── Ödeme butonları (En üst - ana işlemler) ──
+        # ──── İadeler ────
+        order_return_btn = QPushButton("↩  Sipariş İadesi", objectName="secondary")
+        order_return_btn.clicked.connect(self._open_order_return_dialog)
+        refund_btn = QPushButton("🔄  Müşteri İadesi", objectName="secondary")
+        refund_btn.clicked.connect(self._open_return_dialog)
+
+        # ──── İptal ────
+        cancel_btn = QPushButton("✖  SATIŞI İPTAL ET", objectName="danger")
+        cancel_btn.clicked.connect(self._clear_cart)
+
+        # ──── POS Ayarları ────
+        pos_settings_btn = QPushButton("⚙  POS Terminal Ayarları", objectName="secondary")
+        pos_settings_btn.clicked.connect(self._open_pos_settings)
+
+        # ──────── PANEL LAYOUT ────────
+        # 1. Ödeme (üst)
         right.addWidget(cash)
         right.addWidget(card)
-        right.addSpacing(8)
+        right.addSpacing(12)
 
-        # ── Kısayol Ürünleri Widget ──
+        # 2. Hızlı Erişim
         right.addWidget(QLabel("HIZLI ERİŞİM", objectName="cardTitle"))
         shortcuts_panel = QWidget()
         shortcuts_layout = QVBoxLayout(shortcuts_panel)
         shortcuts_layout.setContentsMargins(0, 0, 0, 0)
-        shortcuts_layout.setSpacing(6)
-        
-        # Dinamik kısayol butonları
+        shortcuts_layout.setSpacing(8)
         self.shortcuts_buttons = []
         self._load_and_display_shortcuts(shortcuts_layout)
-        
         shortcuts_layout.addStretch()
         right.addWidget(shortcuts_panel)
-
-        # Kısayol yönetimine git
         right.addWidget(shortcut_btn)
-        right.addSpacing(8)
+        right.addSpacing(12)
 
-        # ── Sipariş ve Depo (Orta Bölüm) ──
+        # 3. İşlemler
         right.addWidget(QLabel("İŞLEMLER", objectName="cardTitle"))
-        order = QPushButton("📋  Sipariş Ver", objectName="secondary")
-        order.setMinimumHeight(44)
-        order.clicked.connect(self._open_order_dialog)
-        receive_order = QPushButton("✓  Sipariş Teslim Al", objectName="secondary")
-        receive_order.setMinimumHeight(44)
-        receive_order.clicked.connect(self._receive_order)
+        right.addWidget(order_btn)
+        right.addWidget(receive_order_btn)
+        right.addWidget(stock_btn)
+        right.addWidget(pending_approval_btn)
+        right.addSpacing(12)
 
-        stock = QPushButton("📦  Depo", objectName="secondary")
-        stock.setMinimumHeight(44)
-        stock.clicked.connect(self._open_stock_dialog)
-        pending_approval = QPushButton("✓  Depo Onayları", objectName="secondary")
-        pending_approval.setMinimumHeight(44)
-        pending_approval.clicked.connect(self._open_pending_approval)
-
-        right.addWidget(order)
-        right.addWidget(receive_order)
-        right.addWidget(stock)
-        right.addWidget(pending_approval)
-        right.addSpacing(8)
-
-        # ── Raporlar ──
+        # 4. Raporlar
         right.addWidget(QLabel("RAPORLAR", objectName="cardTitle"))
-        expiry_warn = QPushButton("⚠  SKT Uyarıları", objectName="secondary")
-        expiry_warn.setMinimumHeight(44)
-        expiry_warn.clicked.connect(self._open_expiry_chart)
-        analytics = QPushButton("📊  Ciro Raporu", objectName="secondary")
-        analytics.setMinimumHeight(44)
-        analytics.clicked.connect(self._open_analytics)
-        
-        right.addWidget(expiry_warn)
-        right.addWidget(analytics)
+        right.addWidget(expiry_warn_btn)
+        right.addWidget(analytics_btn)
         right.addWidget(eod_report_btn)
-        right.addSpacing(8)
+        right.addSpacing(12)
 
-        # ── İadeler (Alt Bölüm) ──
+        # 5. İade & İptal
         right.addWidget(QLabel("İADE & İPTAL", objectName="cardTitle"))
-        order_return = QPushButton("↩  Sipariş İadesi", objectName="secondary")
-        order_return.setMinimumHeight(44)
-        order_return.clicked.connect(self._open_order_return_dialog)
-        refund = QPushButton("🔄  Müşteri İadesi", objectName="secondary")
-        refund.setMinimumHeight(44)
-        refund.clicked.connect(self._open_return_dialog)
-
-        # ── İptal ──
-        cancel = QPushButton("✖  SATIŞI İPTAL ET", objectName="danger")
-        cancel.setMinimumHeight(48)
-        cancel.clicked.connect(self._clear_cart)
-
-        right.addWidget(order_return)
-        right.addWidget(refund)
+        right.addWidget(order_return_btn)
+        right.addWidget(refund_btn)
         right.addStretch()
         right.addWidget(pos_settings_btn)
-        right.addWidget(cancel)
+        right.addWidget(cancel_btn)
 
-        body.addWidget(right_panel, 1)
+        body.addWidget(right_panel, 3)
         self.barcode_input.setFocus()
 
     def _toggle_fullscreen(self):
