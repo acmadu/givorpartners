@@ -1,144 +1,123 @@
-name: Build & Release
+name: Build and Release
 
 on:
   push:
     tags:
-      - 'v*'   # v1.0.0, v1.1.0 gibi tag push edilince tetiklenir
+      - 'v*'
 
 permissions:
-  contents: write  # Release oluşturmak için
+  contents: write
 
 jobs:
-  # ─────────────────────────────────────────────────────────
-  # Windows: PyInstaller → exe → Inno Setup → setup.exe
-  # ─────────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Python kur
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Bağımlılıkları yükle
-        run: pip install -r requirements.txt pyinstaller
+      - name: Install dependencies
+        run: pip install pyinstaller pymongo PyQt5 Pillow
 
-      - name: Sürüm numarasını güncelle
+      - name: Update version
         shell: python
         run: |
-          import re, sys
-          tag = "${{ github.ref_name }}"          # v1.2.3
+          import re
+          tag = "${{ github.ref_name }}"
           version = tag.lstrip("v")
-          with open("version.py", "r+") as f:
+          with open("version.py", "r+", encoding="utf-8") as f:
               content = re.sub(r'VERSION = ".*?"', f'VERSION = "{version}"', f.read())
               f.seek(0); f.write(content); f.truncate()
 
-      - name: Merkez exe derle
+      - name: Build merkez
         run: pyinstaller yazarkasa-merkez.spec
 
-      - name: Kasa exe derle
+      - name: Build kasa
         run: pyinstaller yazarkasa-kasa.spec
 
-      - name: Inno Setup kur
+      - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
 
-      - name: Installer oluştur
+      - name: Build installer
+        shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          (Get-Content installer\yazarkasa-setup.iss) -replace '"1.0.0"', "`"$version`"" |
-            Set-Content installer\yazarkasa-setup.iss
+          $content = Get-Content installer\yazarkasa-setup.iss -Raw
+          $content = $content -replace '"1\.0\.0"', "`"$version`""
+          Set-Content installer\yazarkasa-setup.iss $content
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\yazarkasa-setup.iss
-        shell: pwsh
 
-      - name: version.json oluştur
+      - name: Create version.json
         shell: python
         run: |
-          import json, os
+          import json
           tag = "${{ github.ref_name }}"
           version = tag.lstrip("v")
           repo = "${{ github.repository }}"
           base = f"https://github.com/{repo}/releases/download/{tag}"
           data = {
               "version": version,
-              "download_url_windows": f"{base}/givorpartners-setup-v{version}.exe",
-              "download_url_linux":   f"{base}/givorpartners-kasa-v{version}.AppImage",
-              "download_url_mac":     f"{base}/givorpartners-linux-v{version}.tar.gz",
-              "changelog": "Yeni sürüm — değişiklikler için GitHub Releases sayfasına bakın.",
+              "download_url_windows": f"{base}/GivorPartners-Setup-v{version}.exe",
+              "download_url_linux": f"{base}/givorpartners-kasa-v{version}.AppImage",
+              "changelog": "Yeni surum"
           }
-          with open("version.json", "w") as f:
-              json.dump(data, f, ensure_ascii=False, indent=2)
+          with open("version.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2)
 
-      - name: Release oluştur ve dosyaları yükle
+      - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            installer/Output/yazarkasa-setup-*.exe
+            installer/Output/*.exe
             dist/yazarkasa-merkez.exe
             dist/yazarkasa-kasa.exe
             version.json
-          generate_release_notes: true
 
-  # ─────────────────────────────────────────────────────────
-  # Linux: PyInstaller → binary → tar.gz
-  # ─────────────────────────────────────────────────────────
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Python kur
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Qt bağımlılıklarını yükle
+      - name: Install system deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgl1-mesa-glx libglib2.0-0 libxcb-xinerama0 \
-            libxkbcommon-x11-0 libdbus-1-3 libegl1
+          sudo apt-get update -qq
+          sudo apt-get install -y libgl1 libglib2.0-0 libxcb-xinerama0 libxkbcommon-x11-0 libdbus-1-3
 
-      - name: Python bağımlılıklarını yükle
-        run: pip install -r requirements.txt pyinstaller
+      - name: Install Python deps
+        run: pip install pyinstaller pymongo PyQt5 Pillow
 
-      - name: Sürüm numarasını güncelle
+      - name: Update version
         run: |
           VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
           sed -i "s/VERSION = \".*\"/VERSION = \"$VERSION\"/" version.py
 
-      - name: Merkez exe derle
+      - name: Build merkez
         run: pyinstaller yazarkasa-merkez.spec
 
-      - name: Kasa exe derle
+      - name: Build kasa
         run: pyinstaller yazarkasa-kasa.spec
 
-      - name: Linux paket oluştur (AppImage + .deb)
+      - name: Package tar.gz
         run: |
           VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          # AppImage
-          bash installer/build_appimage.sh her ikisi
-          # .deb (dpkg-deb varsa)
-          if command -v dpkg-deb &>/dev/null; then
-            bash installer/build_deb.sh her ikisi
-          fi
-          # Klasik tar.gz (yedek)
-          mkdir -p linux-dist
-          cp dist/yazarkasa-merkez dist/yazarkasa-kasa config.json linux-dist/
-          cat > linux-dist/baslat-merkez.sh <<'SH'
-#!/bin/bash
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
-"$DIR/yazarkasa-merkez" "$@"
-SH
-          chmod +x linux-dist/baslat-merkez.sh linux-dist/yazarkasa-merkez linux-dist/yazarkasa-kasa
-          tar -czf "givorpartners-linux-v${VERSION}.tar.gz" -C linux-dist .
+          mkdir -p linux-out
+          cp dist/yazarkasa-merkez dist/yazarkasa-kasa config.json linux-out/
+          tar -czf "givorpartners-linux-v${VERSION}.tar.gz" -C linux-out .
 
-      - name: Release'e Linux paketleri ekle
+      - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            installer/givorpartners-kasa-*.AppImage
-            installer/givorpartners-merkez-*.AppImage
-            installer/deb/*.deb
+            dist/yazarkasa-merkez
+            dist/yazarkasa-kasa
             givorpartners-linux-v*.tar.gz
