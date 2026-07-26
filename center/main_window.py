@@ -24,6 +24,7 @@ from center.page_dealer_analytics import DealerAnalyticsPage
 from center.page_reports import ReportsPage
 from center.page_orders import OrdersPage
 from center.page_remote import RemoteManagementPage
+from center.page_excel_import import ExcelImportPage
 from common.expiry_chart import ExpiryChartWidget
 
 
@@ -84,8 +85,7 @@ class CenterWindow(QMainWindow):
             ("📤  Bayi Stokları", DealerStocksPage(self.db)),            ("📊  Bayi Stok Grafikleri", DealerStockChartPage(self.db)),
             ("⚠  SKT Uyarıları", ExpiryChartWidget(self.db)),            ("📋  Siparişler", OrdersPage(self.db)),
             ("🧾  Satış Raporları", ReportsPage(self.db)),
-            ("🛰  Uzaktan Yönetim", RemoteManagementPage(self.db)),
-        ]
+            ("🛰  Uzaktan Yönetim", RemoteManagementPage(self.db)),            ("📊  Excel İçeri Aktar", ExcelImportPage(self.db)),        ]
         for index, (label, page) in enumerate(page_definitions):
             button = QPushButton(label, objectName="navButton")
             button.setCheckable(True)
