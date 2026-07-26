@@ -35,6 +35,8 @@ from pos.dealer_stock_dashboard import DealerStockDashboard
 from pos.dealer_analytics_dialog import DealerAnalyticsDialog
 from pos.pending_stock_approval import PendingStockApprovalDialog
 from pos.customer_info_dialog import CustomerInfoDialog
+from pos.end_of_day_report import EndOfDayReportDialog
+from pos.shortcut_products_dialog import ShortcutProductDialog
 from pymongo.errors import PyMongoError
 
 
@@ -245,18 +247,89 @@ class PosWindow(QMainWindow):
         pos_settings_btn.setMinimumHeight(44)
         pos_settings_btn.clicked.connect(self._open_pos_settings)
 
+        # ── Kısayol Ürünleri Düğmesi ──
+        shortcut_btn = QPushButton("⭐  Kısayol Ürünleri")
+        shortcut_btn.setMinimumHeight(44)
+        shortcut_btn.clicked.connect(self._manage_shortcuts)
+
+        # ── Gün Sonu Raporu ──
+        eod_report_btn = QPushButton("📊  Gün Sonu Raporu")
+        eod_report_btn.setMinimumHeight(44)
+        eod_report_btn.clicked.connect(self._open_eod_report)
+
+        # ── Ödeme butonları (En üst - ana işlemler) ──
         right.addWidget(cash)
         right.addWidget(card)
-        right.addSpacing(4)
+        right.addSpacing(8)
+
+        # ── Kısayol Ürünleri Widget ──
+        right.addWidget(QLabel("HIZLI ERİŞİM", objectName="cardTitle"))
+        shortcuts_panel = QWidget()
+        shortcuts_layout = QVBoxLayout(shortcuts_panel)
+        shortcuts_layout.setContentsMargins(0, 0, 0, 0)
+        shortcuts_layout.setSpacing(6)
+        
+        # Dinamik kısayol butonları
+        self.shortcuts_buttons = []
+        self._load_and_display_shortcuts(shortcuts_layout)
+        
+        shortcuts_layout.addStretch()
+        right.addWidget(shortcuts_panel)
+
+        # Kısayol yönetimine git
+        right.addWidget(shortcut_btn)
+        right.addSpacing(8)
+
+        # ── Sipariş ve Depo (Orta Bölüm) ──
+        right.addWidget(QLabel("İŞLEMLER", objectName="cardTitle"))
+        order = QPushButton("📋  Sipariş Ver", objectName="secondary")
+        order.setMinimumHeight(44)
+        order.clicked.connect(self._open_order_dialog)
+        receive_order = QPushButton("✓  Sipariş Teslim Al", objectName="secondary")
+        receive_order.setMinimumHeight(44)
+        receive_order.clicked.connect(self._receive_order)
+
+        stock = QPushButton("📦  Depo", objectName="secondary")
+        stock.setMinimumHeight(44)
+        stock.clicked.connect(self._open_stock_dialog)
+        pending_approval = QPushButton("✓  Depo Onayları", objectName="secondary")
+        pending_approval.setMinimumHeight(44)
+        pending_approval.clicked.connect(self._open_pending_approval)
+
         right.addWidget(order)
         right.addWidget(receive_order)
-        right.addSpacing(4)
         right.addWidget(stock)
         right.addWidget(pending_approval)
-        right.addSpacing(4)
+        right.addSpacing(8)
+
+        # ── Raporlar ──
+        right.addWidget(QLabel("RAPORLAR", objectName="cardTitle"))
+        expiry_warn = QPushButton("⚠  SKT Uyarıları", objectName="secondary")
+        expiry_warn.setMinimumHeight(44)
+        expiry_warn.clicked.connect(self._open_expiry_chart)
+        analytics = QPushButton("📊  Ciro Raporu", objectName="secondary")
+        analytics.setMinimumHeight(44)
+        analytics.clicked.connect(self._open_analytics)
+        
         right.addWidget(expiry_warn)
         right.addWidget(analytics)
-        right.addSpacing(4)
+        right.addWidget(eod_report_btn)
+        right.addSpacing(8)
+
+        # ── İadeler (Alt Bölüm) ──
+        right.addWidget(QLabel("İADE & İPTAL", objectName="cardTitle"))
+        order_return = QPushButton("↩  Sipariş İadesi", objectName="secondary")
+        order_return.setMinimumHeight(44)
+        order_return.clicked.connect(self._open_order_return_dialog)
+        refund = QPushButton("🔄  Müşteri İadesi", objectName="secondary")
+        refund.setMinimumHeight(44)
+        refund.clicked.connect(self._open_return_dialog)
+
+        # ── İptal ──
+        cancel = QPushButton("✖  SATIŞI İPTAL ET", objectName="danger")
+        cancel.setMinimumHeight(48)
+        cancel.clicked.connect(self._clear_cart)
+
         right.addWidget(order_return)
         right.addWidget(refund)
         right.addStretch()
@@ -751,6 +824,60 @@ class PosWindow(QMainWindow):
                     report + "\n\nBu ürünleri satmayın!")
         except PyMongoError:
             pass
+
+    def _load_and_display_shortcuts(self, layout):
+        """Kısayol ürünleri yükle ve göster."""
+        try:
+            dealer = self.db.dealers.find_one({"code": self.dealer["code"]})
+            shortcuts = dealer.get("shortcut_products", []) if dealer else []
+            
+            # Sıraya göre sort et
+            shortcuts = sorted(shortcuts, key=lambda x: x.get("order", 999))
+            
+            for shortcut in shortcuts[:8]:  # Max 8 kısayol
+                barcode = shortcut.get("barcode", "")
+                product = self.db["products"].find_one({"barcode": barcode})
+                
+                if not product:
+                    continue
+                
+                btn = QPushButton(f"⭐ {product['name'][:15]}")
+                btn.setMinimumHeight(36)
+                btn.setObjectName("secondary")
+                btn.clicked.connect(
+                    lambda _, bc=barcode: self._barcode_scanned(bc)
+                )
+                layout.addWidget(btn)
+                self.shortcuts_buttons.append(btn)
+                
+        except PyMongoError:
+            pass
+
+    def _manage_shortcuts(self):
+        """Kısayol ürünleri yönetim diyalogunu aç."""
+        dialog = ShortcutProductDialog(
+            self.db, self.dealer["code"], self
+        )
+        if dialog.exec_() == QDialog.Accepted:
+            # Kısayolları yeniden yükle
+            for btn in self.shortcuts_buttons:
+                btn.setParent(None)
+            self.shortcuts_buttons.clear()
+            
+            # Yeni panel oluştur
+            shortcuts_panel = QWidget()
+            shortcuts_layout = QVBoxLayout(shortcuts_panel)
+            shortcuts_layout.setContentsMargins(0, 0, 0, 0)
+            shortcuts_layout.setSpacing(6)
+            self._load_and_display_shortcuts(shortcuts_layout)
+            shortcuts_layout.addStretch()
+
+    def _open_eod_report(self):
+        """Gün sonu raporunu aç."""
+        report_dialog = EndOfDayReportDialog(
+            self.db, self.dealer["code"], self
+        )
+        report_dialog.exec_()
 
     def closeEvent(self, event):
         QApplication.instance().removeEventFilter(self)
