@@ -147,12 +147,11 @@ QPushButton {{
     background-color: {p["card"]};
     border: 1px solid {p["border"]};
     border-radius: 10px;
-    padding: {int(18 * FONT_SCALE)}px {int(28 * FONT_SCALE)}px;
-    font-size: {int(base_font * 1.05)}px;
+    padding: {int(14 * FONT_SCALE)}px {int(22 * FONT_SCALE)}px;
+    font-size: {base_font}px;
     font-weight: 500;
     qproperty-wordWrap: true;
-    min-height: {int(54 * FONT_SCALE)}px;
-    line-height: 1.3;
+    min-height: {int(48 * FONT_SCALE)}px;
 }}
 QPushButton:hover {{
     background-color: {p["hover"]};
@@ -169,11 +168,10 @@ QPushButton#primary {{
     border: none;
     color: {p["on_accent"]};
     font-weight: 600;
-    min-height: 72px;
+    min-height: 56px;
     qproperty-wordWrap: true;
-    padding: 18px 28px;
-    font-size: {int(base_font * 1.1)}px;
-    line-height: 1.3;
+    padding: 14px 22px;
+    font-size: {base_font}px;
 }}
 QPushButton#primary:hover {{
     background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -188,11 +186,10 @@ QPushButton#success {{
     border: none;
     color: white;
     font-weight: 600;
-    min-height: 72px;
+    min-height: 56px;
     qproperty-wordWrap: true;
-    padding: 18px 28px;
-    font-size: {int(base_font * 1.1)}px;
-    line-height: 1.3;
+    padding: 14px 22px;
+    font-size: {base_font}px;
 }}
 QPushButton#success:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -204,10 +201,9 @@ QPushButton#secondary {{
     color: {p["text"]};
     font-weight: 500;
     qproperty-wordWrap: true;
-    min-height: {int(54 * FONT_SCALE)}px;
-    padding: 16px 24px;
-    font-size: {int(base_font * 1.02)}px;
-    line-height: 1.3;
+    min-height: {int(48 * FONT_SCALE)}px;
+    padding: 12px 18px;
+    font-size: {base_font}px;
 }}
 QPushButton#secondary:hover {{
     background-color: {p["hover"]};
@@ -224,11 +220,10 @@ QPushButton#danger {{
     border: none;
     color: white;
     font-weight: 600;
-    min-height: 64px;
+    min-height: 52px;
     qproperty-wordWrap: true;
-    padding: 18px 28px;
-    font-size: {int(base_font * 1.1)}px;
-    line-height: 1.3;
+    padding: 14px 22px;
+    font-size: {base_font}px;
 }}
 QPushButton#danger:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,

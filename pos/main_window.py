@@ -187,8 +187,8 @@ class PosWindow(QMainWindow):
         # ---------------- Sağ: toplam + ödeme ----------------
         right_panel = QWidget(objectName="card")
         right = QVBoxLayout(right_panel)
-        right.setContentsMargins(20, 20, 20, 20)
-        right.setSpacing(16)
+        right.setContentsMargins(16, 16, 16, 16)
+        right.setSpacing(12)
 
         right.addWidget(QLabel("GENEL TOPLAM", objectName="cardTitle"))
         self.total_label = QLabel("0,00 ₺", objectName="totalAmount")
@@ -245,20 +245,20 @@ class PosWindow(QMainWindow):
         # 1. Ödeme (üst)
         right.addWidget(cash)
         right.addWidget(card)
-        right.addSpacing(18)
+        right.addSpacing(14)
 
         # 2. Hızlı Erişim
         right.addWidget(QLabel("HIZLI ERİŞİM", objectName="cardTitle"))
         shortcuts_panel = QWidget()
         shortcuts_layout = QVBoxLayout(shortcuts_panel)
         shortcuts_layout.setContentsMargins(0, 0, 0, 0)
-        shortcuts_layout.setSpacing(12)
+        shortcuts_layout.setSpacing(10)
         self.shortcuts_buttons = []
         self._load_and_display_shortcuts(shortcuts_layout)
         shortcuts_layout.addStretch()
         right.addWidget(shortcuts_panel)
         right.addWidget(shortcut_btn)
-        right.addSpacing(18)
+        right.addSpacing(14)
 
         # 3. İşlemler
         right.addWidget(QLabel("İŞLEMLER", objectName="cardTitle"))
@@ -273,7 +273,7 @@ class PosWindow(QMainWindow):
         right.addWidget(expiry_warn_btn)
         right.addWidget(analytics_btn)
         right.addWidget(eod_report_btn)
-        right.addSpacing(18)
+        right.addSpacing(14)
 
         # 5. İade & İptal
         right.addWidget(QLabel("İADE & İPTAL", objectName="cardTitle"))
