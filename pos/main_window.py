@@ -15,8 +15,8 @@ from datetime import datetime
 from PyQt5.QtCore import QEvent, Qt, QTimer
 from PyQt5.QtGui import QKeySequence, QIcon
 from PyQt5.QtWidgets import (
-    QApplication, QDialog, QDialogButtonBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMainWindow,
-    QMessageBox, QPushButton, QShortcut, QTableWidget, QTableWidgetItem,
+    QApplication, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMainWindow,
+    QMessageBox, QPushButton, QScrollArea, QShortcut, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QWidget,
 )
 
@@ -256,46 +256,80 @@ class PosWindow(QMainWindow):
         pos_settings_btn.clicked.connect(self._open_pos_settings)
 
         # ──────── PANEL LAYOUT ────────
-        # 1. Ödeme (üst)
+        # 1. Ödeme (üst) - FULL WIDTH
         right.addWidget(cash)
         right.addWidget(card)
-        right.addSpacing(14)
+        right.addSpacing(12)
 
-        # 2. Hızlı Erişim
-        right.addWidget(QLabel("HIZLI ERİŞİM", objectName="cardTitle"))
+        # 2-5. Tüm işlem butonları ScrollArea'da 2-COLUMN GRID
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        
+        buttons_container = QWidget()
+        buttons_grid = QGridLayout(buttons_container)
+        buttons_grid.setContentsMargins(0, 0, 0, 0)
+        buttons_grid.setSpacing(10)
+        buttons_grid.setColumnStretch(0, 1)
+        buttons_grid.setColumnStretch(1, 1)
+        
+        row = 0
+        
+        # 2. Kısayol Ürünleri
+        buttons_grid.addWidget(QLabel("HIZLI ERİŞİM", objectName="cardTitle"), row, 0, 1, 2)
+        row += 1
+        
         shortcuts_panel = QWidget()
         shortcuts_layout = QVBoxLayout(shortcuts_panel)
         shortcuts_layout.setContentsMargins(0, 0, 0, 0)
-        shortcuts_layout.setSpacing(10)
+        shortcuts_layout.setSpacing(8)
         self.shortcuts_buttons = []
         self._load_and_display_shortcuts(shortcuts_layout)
         shortcuts_layout.addStretch()
-        right.addWidget(shortcuts_panel)
-        right.addWidget(shortcut_btn)
-        right.addSpacing(14)
-
+        buttons_grid.addWidget(shortcuts_panel, row, 0, 1, 2)
+        row += 1
+        buttons_grid.addWidget(shortcut_btn, row, 0, 1, 2)
+        row += 1
+        buttons_grid.addSpacing(8)
+        row += 1
+        
         # 3. İşlemler
-        right.addWidget(QLabel("İŞLEMLER", objectName="cardTitle"))
-        right.addWidget(order_btn)
-        right.addWidget(receive_order_btn)
-        right.addWidget(stock_btn)
-        right.addWidget(pending_approval_btn)
-        right.addSpacing(12)
-
+        buttons_grid.addWidget(QLabel("İŞLEMLER", objectName="cardTitle"), row, 0, 1, 2)
+        row += 1
+        buttons_grid.addWidget(order_btn, row, 0)
+        buttons_grid.addWidget(receive_order_btn, row, 1)
+        row += 1
+        buttons_grid.addWidget(stock_btn, row, 0)
+        buttons_grid.addWidget(pending_approval_btn, row, 1)
+        row += 1
+        buttons_grid.addSpacing(8)
+        row += 1
+        
         # 4. Raporlar
-        right.addWidget(QLabel("RAPORLAR", objectName="cardTitle"))
-        right.addWidget(expiry_warn_btn)
-        right.addWidget(analytics_btn)
-        right.addWidget(eod_report_btn)
-        right.addSpacing(14)
-
+        buttons_grid.addWidget(QLabel("RAPORLAR", objectName="cardTitle"), row, 0, 1, 2)
+        row += 1
+        buttons_grid.addWidget(expiry_warn_btn, row, 0)
+        buttons_grid.addWidget(analytics_btn, row, 1)
+        row += 1
+        buttons_grid.addWidget(eod_report_btn, row, 0, 1, 2)
+        row += 1
+        buttons_grid.addSpacing(8)
+        row += 1
+        
         # 5. İade & İptal
-        right.addWidget(QLabel("İADE & İPTAL", objectName="cardTitle"))
-        right.addWidget(order_return_btn)
-        right.addWidget(refund_btn)
-        right.addStretch()
-        right.addWidget(pos_settings_btn)
-        right.addWidget(cancel_btn)
+        buttons_grid.addWidget(QLabel("İADE & İPTAL", objectName="cardTitle"), row, 0, 1, 2)
+        row += 1
+        buttons_grid.addWidget(order_return_btn, row, 0)
+        buttons_grid.addWidget(refund_btn, row, 1)
+        row += 1
+        buttons_grid.addWidget(pos_settings_btn, row, 0, 1, 2)
+        row += 1
+        buttons_grid.addWidget(cancel_btn, row, 0, 1, 2)
+        row += 1
+        buttons_grid.addStretch()
+        
+        scroll.setWidget(buttons_container)
+        right.addWidget(scroll)
 
         body.addWidget(right_panel, 1)
         self.barcode_input.setFocus()
