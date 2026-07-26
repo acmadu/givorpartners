@@ -43,13 +43,24 @@ jobs:
         run: choco install innosetup --no-progress -y
 
       - name: Build installer
-        shell: pwsh
+        shell: python
         run: |
-          $version = "${{ github.ref_name }}".TrimStart("v")
-          $content = Get-Content installer\yazarkasa-setup.iss -Raw
-          $content = $content -replace '"1\.0\.0"', "`"$version`""
-          Set-Content installer\yazarkasa-setup.iss $content
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\yazarkasa-setup.iss
+          import subprocess
+          import re
+          tag = "${{ github.ref_name }}"
+          version = tag.lstrip("v")
+          
+          # Update ISS file
+          with open("installer/yazarkasa-setup.iss", "r", encoding="utf-8") as f:
+              content = f.read()
+          content = re.sub(r'#define AppVersion ".*"', f'#define AppVersion "{version}"', content)
+          content = re.sub(r'OutputBaseFilename=.*', f'OutputBaseFilename=GivorPartners-Setup-v{version}', content)
+          with open("installer/yazarkasa-setup.iss", "w", encoding="utf-8") as f:
+              f.write(content)
+          
+          # Run Inno Setup
+          iscc_path = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          subprocess.run([iscc_path, "installer/yazarkasa-setup.iss"], check=True)
 
       - name: Create version.json
         shell: python
