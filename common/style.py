@@ -147,10 +147,9 @@ QPushButton {{
     background-color: {p["card"]};
     border: 1px solid {p["border"]};
     border-radius: 10px;
-    padding: {int(14 * FONT_SCALE)}px {int(24 * FONT_SCALE)}px;
+    padding: {int(12 * FONT_SCALE)}px {int(20 * FONT_SCALE)}px;
     font-size: {base_font}px;
     font-weight: 500;
-    min-height: 44px;
 }}
 QPushButton:hover {{
     background-color: {p["hover"]};
@@ -193,7 +192,6 @@ QPushButton#secondary {{
     border: 1px solid {p["border"]};
     color: {p["text"]};
     font-weight: 500;
-    min-height: 48px;
 }}
 QPushButton#secondary:hover {{
     background-color: {p["hover"]};

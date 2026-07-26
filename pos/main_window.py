@@ -182,13 +182,13 @@ class PosWindow(QMainWindow):
         cart_buttons.addStretch()
         left.addLayout(cart_buttons)
 
-        body.addLayout(left, 7)
+        body.addLayout(left, 2)
 
         # ---------------- Sağ: toplam + ödeme ----------------
         right_panel = QWidget(objectName="card")
         right = QVBoxLayout(right_panel)
-        right.setContentsMargins(28, 28, 28, 28)
-        right.setSpacing(18)
+        right.setContentsMargins(24, 24, 24, 24)
+        right.setSpacing(14)
 
         right.addWidget(QLabel("GENEL TOPLAM", objectName="cardTitle"))
         self.total_label = QLabel("0,00 ₺", objectName="totalAmount")
@@ -283,7 +283,7 @@ class PosWindow(QMainWindow):
         right.addWidget(pos_settings_btn)
         right.addWidget(cancel_btn)
 
-        body.addWidget(right_panel, 3)
+        body.addWidget(right_panel, 1)
         self.barcode_input.setFocus()
 
     def _toggle_fullscreen(self):
