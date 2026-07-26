@@ -55,7 +55,8 @@ class PosWindow(QMainWindow):
         favicon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'favicon.ico')
         if os.path.exists(favicon_path):
             self.setWindowIcon(QIcon(favicon_path))
-        self.resize(1280, 800)
+        # Minimum boyut ayarla (responsive design için)
+        self.setMinimumSize(1024, 600)
         self._build_ui()
         self._start_clock()
         # Sabit okuyucu desteği: tüm tuş vuruşlarını izle (bkz. eventFilter)

@@ -36,7 +36,7 @@ def main():
         sys.exit(1)
 
     window = CenterWindow(db, settings)
-    window.show()
+    window.showMaximized()
     install_event_filter(app, window)
     check_for_update(window)
     sys.exit(app.exec_())

@@ -34,7 +34,8 @@ class CenterWindow(QMainWindow):
         self.db = db
         self.settings = settings
         self.setWindowTitle("GivorPartners — Merkez Yönetim")
-        self.resize(1280, 800)
+        # Minimum boyut ayarla (responsive design için)
+        self.setMinimumSize(1024, 600)
         # Favicon ayarla
         favicon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'favicon.ico')
         if os.path.exists(favicon_path):

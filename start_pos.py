@@ -56,7 +56,7 @@ def main():
         sys.exit(0)
 
     window = PosWindow(db, login.dealer, settings)
-    window.show()
+    window.showMaximized()
     install_event_filter(app, window)
 
     # ── Arkaplanda: güncelleme kontrolü + AnyDesk ID ──
