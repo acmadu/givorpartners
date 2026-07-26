@@ -201,44 +201,58 @@ class PosWindow(QMainWindow):
 
         # ──── Ödeme butonları (Ana işlemler) ────
         cash = QPushButton("💵  NAKİT", objectName="success")
+        cash.setWordWrap(True)
         cash.clicked.connect(self._payment_with_customer_info("NAKİT"))
         card = QPushButton("💳  KREDİ KARTI", objectName="primary")
+        card.setWordWrap(True)
         card.clicked.connect(self._payment_with_customer_info("KART"))
 
         # ──── Kısayol Ürünleri ────
         shortcut_btn = QPushButton("⭐  Kısayol Ürünleri", objectName="secondary")
+        shortcut_btn.setWordWrap(True)
         shortcut_btn.clicked.connect(self._manage_shortcuts)
 
         # ──── Sipariş & Depo ────
         order_btn = QPushButton("📋  Sipariş Ver", objectName="secondary")
+        order_btn.setWordWrap(True)
         order_btn.clicked.connect(self._open_order_dialog)
         receive_order_btn = QPushButton("✓  Sipariş Teslim Al", objectName="secondary")
+        receive_order_btn.setWordWrap(True)
         receive_order_btn.clicked.connect(self._receive_order)
         stock_btn = QPushButton("📦  Depo", objectName="secondary")
+        stock_btn.setWordWrap(True)
         stock_btn.clicked.connect(self._open_stock_dialog)
         pending_approval_btn = QPushButton("✓  Depo Onayları", objectName="secondary")
+        pending_approval_btn.setWordWrap(True)
         pending_approval_btn.clicked.connect(self._open_pending_approval)
 
         # ──── Raporlar ────
         expiry_warn_btn = QPushButton("⚠  SKT Uyarıları", objectName="secondary")
+        expiry_warn_btn.setWordWrap(True)
         expiry_warn_btn.clicked.connect(self._open_expiry_chart)
         analytics_btn = QPushButton("📊  Ciro Raporu", objectName="secondary")
+        analytics_btn.setWordWrap(True)
         analytics_btn.clicked.connect(self._open_analytics)
         eod_report_btn = QPushButton("📊  Gün Sonu Raporu", objectName="secondary")
+        eod_report_btn.setWordWrap(True)
         eod_report_btn.clicked.connect(self._open_eod_report)
 
         # ──── İadeler ────
         order_return_btn = QPushButton("↩  Sipariş İadesi", objectName="secondary")
+        order_return_btn.setWordWrap(True)
         order_return_btn.clicked.connect(self._open_order_return_dialog)
         refund_btn = QPushButton("🔄  Müşteri İadesi", objectName="secondary")
+        refund_btn.setWordWrap(True)
         refund_btn.clicked.connect(self._open_return_dialog)
 
         # ──── İptal ────
         cancel_btn = QPushButton("✖  SATIŞI İPTAL ET", objectName="danger")
+        cancel_btn.setWordWrap(True)
         cancel_btn.clicked.connect(self._clear_cart)
 
         # ──── POS Ayarları ────
         pos_settings_btn = QPushButton("⚙  POS Terminal Ayarları", objectName="secondary")
+        pos_settings_btn.setWordWrap(True)
         pos_settings_btn.clicked.connect(self._open_pos_settings)
 
         # ──────── PANEL LAYOUT ────────
