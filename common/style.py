@@ -150,6 +150,8 @@ QPushButton {{
     padding: {int(12 * FONT_SCALE)}px {int(20 * FONT_SCALE)}px;
     font-size: {base_font}px;
     font-weight: 500;
+    qproperty-wordWrap: true;
+    min-height: {int(40 * FONT_SCALE)}px;
 }}
 QPushButton:hover {{
     background-color: {p["hover"]};
@@ -167,6 +169,7 @@ QPushButton#primary {{
     color: {p["on_accent"]};
     font-weight: 600;
     min-height: 64px;
+    qproperty-wordWrap: true;
 }}
 QPushButton#primary:hover {{
     background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -182,6 +185,7 @@ QPushButton#success {{
     color: white;
     font-weight: 600;
     min-height: 64px;
+    qproperty-wordWrap: true;
 }}
 QPushButton#success:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -192,6 +196,8 @@ QPushButton#secondary {{
     border: 1px solid {p["border"]};
     color: {p["text"]};
     font-weight: 500;
+    qproperty-wordWrap: true;
+    min-height: {int(40 * FONT_SCALE)}px;
 }}
 QPushButton#secondary:hover {{
     background-color: {p["hover"]};
@@ -209,6 +215,7 @@ QPushButton#danger {{
     color: white;
     font-weight: 600;
     min-height: 56px;
+    qproperty-wordWrap: true;
 }}
 QPushButton#danger:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
