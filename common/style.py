@@ -147,11 +147,12 @@ QPushButton {{
     background-color: {p["card"]};
     border: 1px solid {p["border"]};
     border-radius: 10px;
-    padding: {int(12 * FONT_SCALE)}px {int(20 * FONT_SCALE)}px;
-    font-size: {base_font}px;
+    padding: {int(18 * FONT_SCALE)}px {int(28 * FONT_SCALE)}px;
+    font-size: {int(base_font * 1.05)}px;
     font-weight: 500;
     qproperty-wordWrap: true;
-    min-height: {int(40 * FONT_SCALE)}px;
+    min-height: {int(54 * FONT_SCALE)}px;
+    line-height: 1.3;
 }}
 QPushButton:hover {{
     background-color: {p["hover"]};
@@ -168,8 +169,11 @@ QPushButton#primary {{
     border: none;
     color: {p["on_accent"]};
     font-weight: 600;
-    min-height: 64px;
+    min-height: 72px;
     qproperty-wordWrap: true;
+    padding: 18px 28px;
+    font-size: {int(base_font * 1.1)}px;
+    line-height: 1.3;
 }}
 QPushButton#primary:hover {{
     background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -184,8 +188,11 @@ QPushButton#success {{
     border: none;
     color: white;
     font-weight: 600;
-    min-height: 64px;
+    min-height: 72px;
     qproperty-wordWrap: true;
+    padding: 18px 28px;
+    font-size: {int(base_font * 1.1)}px;
+    line-height: 1.3;
 }}
 QPushButton#success:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -197,7 +204,10 @@ QPushButton#secondary {{
     color: {p["text"]};
     font-weight: 500;
     qproperty-wordWrap: true;
-    min-height: {int(40 * FONT_SCALE)}px;
+    min-height: {int(54 * FONT_SCALE)}px;
+    padding: 16px 24px;
+    font-size: {int(base_font * 1.02)}px;
+    line-height: 1.3;
 }}
 QPushButton#secondary:hover {{
     background-color: {p["hover"]};
@@ -214,8 +224,11 @@ QPushButton#danger {{
     border: none;
     color: white;
     font-weight: 600;
-    min-height: 56px;
+    min-height: 64px;
     qproperty-wordWrap: true;
+    padding: 18px 28px;
+    font-size: {int(base_font * 1.1)}px;
+    line-height: 1.3;
 }}
 QPushButton#danger:hover {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
