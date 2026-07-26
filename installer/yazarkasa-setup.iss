@@ -56,26 +56,26 @@ Source: "..\dist\yazarkasa-kasa*";   DestDir: "{app}"; Flags: ignoreversion
 Source: "..\config.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
-; Başlat Menüsü
-Name: "{group}\Merkez Yönetim"; Filename: "{app}\{#MerkezExe}"
-Name: "{group}\Kasa (POS)";     Filename: "{app}\{#KasaExe}"
+; Baslat Menusu
+Name: "{group}\Merkez Yonetim"; Filename: "{app}\yazarkasa-merkez.exe"
+Name: "{group}\Kasa (POS)";     Filename: "{app}\yazarkasa-kasa.exe"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
 
-; Masaüstü kısayolları (isteğe bağlı)
-Name: "{autodesktop}\Yazar Kasa Merkez"; Filename: "{app}\{#MerkezExe}"; Tasks: desktopicon_merkez
-Name: "{autodesktop}\Yazar Kasa Kasa";   Filename: "{app}\{#KasaExe}";   Tasks: desktopicon_kasa
+; Masaustu kisayollari (istege bagli)
+Name: "{autodesktop}\Yazar Kasa Merkez"; Filename: "{app}\yazarkasa-merkez.exe"; Tasks: desktopicon_merkez
+Name: "{autodesktop}\Yazar Kasa Kasa";   Filename: "{app}\yazarkasa-kasa.exe";   Tasks: desktopicon_kasa
 
 [Registry]
-; Otomatik başlatma
+; Otomatik baslatma
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
   ValueType: string; ValueName: "YazarKasaKasa"; \
-  ValueData: """{app}\{#KasaExe}"""; \
+  ValueData: """{app}\yazarkasa-kasa.exe"""; \
   Flags: uninsdeletevalue; Tasks: startup_kasa
 
 [Run]
-; Kurulum tamamlanınca Merkez'i aç (isteğe bağlı)
-Filename: "{app}\{#MerkezExe}"; \
-  Description: "Yazar Kasa Merkez'i şimdi başlat"; \
+; Kurulum tamamlaninca Merkez'i ac (istege bagli)
+Filename: "{app}\yazarkasa-merkez.exe"; \
+  Description: "Yazar Kasa Merkez'i simdi baslat"; \
   Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
