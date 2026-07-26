@@ -1,0 +1,12 @@
+config.json
+.env
+dist/
+build/
+*.spec.local
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+venv/
+.vscode/
+*.log

@@ -1,0 +1,13 @@
+{
+  "mongo_uri": "mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/?retryWrites=false&w=majority&connectTimeoutMS=30000&serverSelectionTimeoutMS=30000&socketTimeoutMS=30000&tlsAllowInvalidCertificates=true",
+  "database_name": "yazarkasa",
+  "dealer_code": "BAYI-001",
+  "dealer_name": "Bayi",
+  "theme": "light",
+  "font_scale": 1.0,
+  "terminal_mode": "manual",
+  "terminal_port": "",
+  "terminal_baud": 9600,
+  "terminal_host": "",
+  "terminal_tcp_port": 8000
+}

@@ -12,14 +12,15 @@ else:
 CONFIG_FILE = os.path.join(PROJECT_DIR, "config.json")
 
 DEFAULT_SETTINGS = {
-    "mongo_uri": "mongodb://localhost:27017",
+    # GivorPartners MongoDB Atlas — tüm konumlarda otomatik bağlanır
+    "mongo_uri": "mongodb+srv://givor_db:DsQ0IU5S8cV4OpPgAOPF@givor.odagxtj.mongodb.net/?retryWrites=false&w=majority&connectTimeoutMS=30000&serverSelectionTimeoutMS=30000&socketTimeoutMS=30000&tlsAllowInvalidCertificates=true",
     "database_name": "yazarkasa",
     "dealer_code": "BAYI-001",
-    "dealer_name": "Örnek Bayi",
-    "theme": "night_mint",
-    "font_scale": 1.0,  # 1.0 = normal, 1.2 = 20% büyük, vb.
+    "dealer_name": "Bayi",
+    "theme": "light",
+    "font_scale": 1.0,
     # Ödeme terminali
-    "terminal_mode": "manual",   # manual | serial | tcp
+    "terminal_mode": "manual",   # manual | serial | tcp | ingenico
     "terminal_port": "",         # /dev/ttyUSB0  veya  COM3
     "terminal_baud": 9600,
     "terminal_host": "",         # TCP modu: terminal IP adresi

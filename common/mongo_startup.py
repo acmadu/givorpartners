@@ -86,8 +86,14 @@ def ensure_mongodb_running(uri: str = "mongodb://127.0.0.1:27017") -> bool:
 def startup_check(mongo_uri: str = "mongodb://127.0.0.1:27017"):
     """
     Uygulamayı açarken MongoDB'yi kontrol et.
+    • Localhost MongoDB: Otomatik başlatmaya çalış
+    • MongoDB Atlas (mongodb+srv://...): Kontrol atla (bulut hizmeti)
     Bağlantı başarısız → kullanıcıya dialog göster.
     """
+    # MongoDB Atlas (bulut) ise, startup kontrol atla
+    if "mongodb+srv://" in mongo_uri or "atlas" in mongo_uri.lower():
+        return  # Bulut MongoDB zaten hazır
+    
     if not _is_mongodb_running(mongo_uri):
         print("[Başlangıç] MongoDB bağlanılamıyor...")
         
