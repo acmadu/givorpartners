@@ -12,6 +12,7 @@ binaries = []
 hiddenimports = [
     'pymongo', 'pymongo.auth', 'pymongo.auth_oidc',
     'bson', 'PyQt5', 'PyQt5.QtChart', 'PyQt5.sip',
+    'openpyxl',
 ]
 hiddenimports += collect_submodules('pymongo')
 tmp_ret = collect_all('PyQt5')
