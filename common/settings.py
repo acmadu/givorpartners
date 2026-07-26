@@ -13,7 +13,7 @@ CONFIG_FILE = os.path.join(PROJECT_DIR, "config.json")
 
 DEFAULT_SETTINGS = {
     # GivorPartners MongoDB Atlas — tüm konumlarda otomatik bağlanır
-    "mongo_uri": "mongodb+srv://givor_db:DsQ0IU5S8cV4OpPgAOPF@givor.odagxtj.mongodb.net/?retryWrites=false&w=majority&connectTimeoutMS=30000&serverSelectionTimeoutMS=30000&socketTimeoutMS=30000&tlsAllowInvalidCertificates=true",
+    "mongo_uri": "mongodb+srv://givor_db:DsQ0IU5S8cV4OpPgAOPF@givor.odagxtj.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=60000&serverSelectionTimeoutMS=60000&socketTimeoutMS=60000&tlsVersion=TLSv1_2",
     "database_name": "yazarkasa",
     "dealer_code": "BAYI-001",
     "dealer_name": "Bayi",
