@@ -30,10 +30,11 @@ jobs:
         MONGO_URI: ${{ secrets.MONGO_URI }}
       run: |
         python - <<'PY'
-        import json, os, sys
+        import json, os
         uri = os.environ.get("MONGO_URI", "").strip()
         if not uri:
-            sys.exit("HATA: MONGO_URI secret tanimli degil.")
+            print("UYARI: MONGO_URI secret tanimli degil — example config kullanilacak")
+            exit(0)
         cfg = json.load(open("config.json.example", encoding="utf-8"))
         cfg["mongo_uri"] = uri
         with open("config.json.example", "w", encoding="utf-8") as fh:
