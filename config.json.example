@@ -1,5 +1,4 @@
 {
-  "mongo_uri": "mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=60000&serverSelectionTimeoutMS=60000&socketTimeoutMS=60000&tlsVersion=TLSv1_2",
   "database_name": "yazarkasa",
   "dealer_code": "BAYI-001",
   "dealer_name": "Bayi",

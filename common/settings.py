@@ -12,8 +12,18 @@ else:
 CONFIG_FILE = os.path.join(PROJECT_DIR, "config.json")
 
 DEFAULT_SETTINGS = {
-    # GivorPartners MongoDB Atlas — tüm konumlarda otomatik bağlanır
-    "mongo_uri": "mongodb+srv://givor_db:DsQ0IU5S8cV4OpPgAOPF@givor.odagxtj.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=60000&serverSelectionTimeoutMS=60000&socketTimeoutMS=60000&tlsVersion=TLSv1_2",
+    # GivorPartners MongoDB Atlas — SRV yerine doğrudan sunucu adresleri
+    # kullanılır; bazı modem/ISP'ler SRV (_mongodb._tcp) sorgusunu engelliyor.
+    "mongo_uri": (
+        "mongodb://givor_db:DsQ0IU5S8cV4OpPgAOPF@"
+        "ac-m3m46tp-shard-00-00.odagxtj.mongodb.net:27017,"
+        "ac-m3m46tp-shard-00-01.odagxtj.mongodb.net:27017,"
+        "ac-m3m46tp-shard-00-02.odagxtj.mongodb.net:27017"
+        "/?tls=true&replicaSet=atlas-p44ndh-shard-0&authSource=admin"
+        "&retryWrites=true&w=majority"
+        "&connectTimeoutMS=20000&serverSelectionTimeoutMS=20000"
+        "&socketTimeoutMS=30000"
+    ),
     "database_name": "yazarkasa",
     "dealer_code": "BAYI-001",
     "dealer_name": "Bayi",
@@ -35,6 +45,17 @@ LEGACY_KEYS = {
 }
 
 
+# Kurulum şablonundan gelen sahte (örnek) bağlantı adresi işaretleri
+PLACEHOLDER_MARKERS = ("USERNAME", "PASSWORD", "CLUSTER.mongodb.net",
+                       "<", "example.com")
+
+
+def _is_placeholder_uri(uri: str) -> bool:
+    if not uri or not uri.strip():
+        return True
+    return any(marker in uri for marker in PLACEHOLDER_MARKERS)
+
+
 def save_settings(settings: dict):
     """Ayarları config.json dosyasına yazar (yalnız sahibi okuyabilir)."""
     with open(CONFIG_FILE, "w", encoding="utf-8") as file:
@@ -49,8 +70,13 @@ def load_settings() -> dict:
     if not os.path.exists(CONFIG_FILE):
         save_settings(dict(DEFAULT_SETTINGS))
         return dict(DEFAULT_SETTINGS)
-    with open(CONFIG_FILE, encoding="utf-8") as file:
-        settings = json.load(file)
+    try:
+        with open(CONFIG_FILE, encoding="utf-8") as file:
+            settings = json.load(file)
+    except (json.JSONDecodeError, OSError):
+        # Bozuk config → varsayılanlara dön
+        save_settings(dict(DEFAULT_SETTINGS))
+        return dict(DEFAULT_SETTINGS)
     # Eski Türkçe anahtarları İngilizce'ye taşı
     migrated = False
     for old_key, new_key in LEGACY_KEYS.items():
@@ -60,6 +86,10 @@ def load_settings() -> dict:
     # Eksik anahtarları varsayılanlarla tamamla
     for key, value in DEFAULT_SETTINGS.items():
         settings.setdefault(key, value)
+    # Kurulum şablonundaki örnek adres kaldıysa gerçek adresle değiştir
+    if _is_placeholder_uri(settings.get("mongo_uri", "")):
+        settings["mongo_uri"] = DEFAULT_SETTINGS["mongo_uri"]
+        migrated = True
     if migrated:
         save_settings(settings)
     return settings
