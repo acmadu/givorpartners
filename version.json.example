@@ -1,0 +1,6 @@
+{
+  "version": "1.0.1",
+  "yazarkasa-merkez_setup_url": "https://github.com/acmadu/givorpartners/releases/download/v1.0.1/yazarkasa-merkez-setup-v1.0.1.exe",
+  "yazarkasa-kasa_setup_url": "https://github.com/acmadu/givorpartners/releases/download/v1.0.1/yazarkasa-kasa-setup-v1.0.1.exe",
+  "setup_exe_name": "setup.exe"
+}

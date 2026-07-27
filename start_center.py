@@ -11,6 +11,7 @@ from common.style import build_qss
 from common.database import Database, DatabaseError
 from common.updater import check_for_update, install_event_filter
 from common.mongo_startup import startup_check
+from common.auto_updater import AutoUpdater
 from center.main_window import CenterWindow
 
 
@@ -20,6 +21,10 @@ def main():
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
+    
+    # Otomatik güncelleme - arka planda başlat
+    updater = AutoUpdater("yazarkasa-merkez")
+    updater.check_and_update_async()
 
     settings = load_settings()
     style.FONT_SCALE = settings.get("font_scale", 1.0)

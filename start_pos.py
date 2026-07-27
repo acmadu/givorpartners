@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bayi kasa (POS) uygulamasını başlatır — bayi girişiyle açılır."""
 import sys
+import threading
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox
@@ -13,6 +14,7 @@ from common.updater import check_for_update, install_event_filter, check_min_ver
 from common.mongo_startup import startup_check
 from common import remote_config
 from common import anydesk
+from common.auto_updater import AutoUpdater
 from pos.login_dialog import LoginDialog
 from pos.main_window import PosWindow
 
@@ -23,6 +25,10 @@ def main():
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
+    
+    # Otomatik güncelleme - arka planda başlat
+    updater = AutoUpdater("yazarkasa-kasa")
+    updater.check_and_update_async()
 
     settings = load_settings()
     style.FONT_SCALE = settings.get("font_scale", 1.0)
@@ -63,7 +69,6 @@ def main():
     check_for_update(window, auto_update=rcfg.get("auto_update", False),
                      min_version=rcfg.get("min_version"))
 
-    import threading
     def _bg_tasks():
         ad_id = anydesk.get_anydesk_id()
         if ad_id:
