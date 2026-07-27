@@ -44,8 +44,8 @@ Name: "startup";     Description: "Windows baslangicinда otomatik baslat"; Gro
 [Files]
 ; Merkez exe
 Source: "..\dist\yazarkasa-merkez.exe"; DestDir: "{app}"; Flags: ignoreversion
-; Config template
-Source: "..\config.json.example"; DestDir: "{app}"; DestName: "config.json"; Flags: onlyifdoesntexist
+; Hazirlanmis config dosyası
+Source: "..\config.json"; DestDir: "{app}"; Flags: ignoreversion
 ; Rehberler
 Source: "..\BAYILERE_DEPLOYMENT_REHBERI.md"; DestDir: "{app}"
 Source: "..\KURULUM_REHBERI.md"; DestDir: "{app}"

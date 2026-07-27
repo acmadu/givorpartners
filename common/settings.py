@@ -29,12 +29,12 @@ DEFAULT_SETTINGS = {
     "dealer_name": "Bayi",
     "theme": "light",
     "font_scale": 1.0,
-    # Ödeme terminali
-    "terminal_mode": "manual",   # manual | serial | tcp | ingenico
+    # Ödeme terminali — varsayılan: Ingenico Move 3000F
+    "terminal_mode": "ingenico",   # manual | serial | tcp | ingenico
     "terminal_port": "",         # /dev/ttyUSB0  veya  COM3
     "terminal_baud": 9600,
-    "terminal_host": "",         # TCP modu: terminal IP adresi
-    "terminal_tcp_port": 8000,
+    "terminal_host": "192.168.1.100",         # Ingenico TCP modu: terminal IP adresi
+    "terminal_tcp_port": 6240,    # Ingenico Move 3000F: port 6240
 }
 
 # Eski (Türkçe) anahtarların İngilizce karşılıkları
