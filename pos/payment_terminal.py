@@ -34,7 +34,10 @@ except ImportError:
 
 STX = 0x02
 ETX = 0x03
+ACK = 0x06
+NAK = 0x15
 TIMEOUT = 45  # saniye (müşteri kartını okutana kadar bekle)
+CONNECT_TIMEOUT = 5  # bağlantı kurma zaman aşımı
 
 
 class TerminalMode(str, Enum):
@@ -75,7 +78,7 @@ class PaymentTerminal:
         self.baud     = int(settings.get("terminal_baud", 9600))
         self.host     = settings.get("terminal_host", "")
         self.tcp_port = int(settings.get("terminal_tcp_port",
-                            8400 if settings.get("terminal_mode") == "ingenico"
+                            6240 if settings.get("terminal_mode") == "ingenico"
                             else 8000))
 
     # --------------------------------------------------------- Public API
@@ -118,28 +121,39 @@ class PaymentTerminal:
         return lrc
 
     def _build_ingenico_request(self, amount_kurus: int) -> bytes:
-        """Ingenico EFT-POS istek paketi oluşturur.
+        """Ingenico Move 3000F / ELPOS TCP istek paketi.
 
-        Format: STX + "0200" + amount(12) + "949" + ETX + LRC
+        Format (Türkiye ELPOS):
+          [4 byte uzunluk (ASCII)] + [mesaj tipi 4 byte] + [tutar 12 byte] + [para birimi 3 byte]
+          Veya eski format: STX + "0200" + amount(12) + "949" + ETX + LRC
         """
-        body = (f"0200{amount_kurus:012d}949").encode("ascii")
+        # ELPOS format: length-prefixed
+        payload = f"0200{amount_kurus:012d}949".encode("ascii")
+        length = f"{len(payload):04d}".encode("ascii")
+        return length + payload
+
+    def _build_ingenico_request_legacy(self, amount_kurus: int) -> bytes:
+        """Eski Ingenico STX/ETX/LRC formatı (iCT220/250 vb.)"""
+        body = f"0200{amount_kurus:012d}949".encode("ascii")
         lrc = self._lrc(body + bytes([ETX]))
         return bytes([STX]) + body + bytes([ETX, lrc])
 
     def _parse_ingenico_response(self, data: bytes,
                                   amount: float) -> PaymentResult:
-        """Ingenico EFT-POS yanıtını ayrıştırır.
-
-        Format: STX + "0210" + resp_code(2) + auth_code(6) + ref_no(12)
-                + card_last4(4) + ETX + LRC
-        """
-        if not data or data[0] != STX:
+        """Ingenico EFT-POS yanıtını ayrıştırır. ELPOS ve STX/ETX formatlarını destekler."""
+        if not data:
             return PaymentResult(approved=False, amount=amount,
                                  error_message="Terminal yanıt vermedi")
         try:
-            # STX kaldır, ETX+LRC kaldır
-            inner = data[1:-2].decode("ascii", errors="replace")
-            # inner = "0210" + resp_code(2) + auth_code(6) + ref_no(12) + ...
+            # ELPOS: ilk 4 byte uzunluk (ASCII rakam)
+            if data[:4].isdigit():
+                inner = data[4:].decode("ascii", errors="replace")
+            elif data[0] == STX:
+                # Legacy STX/ETX
+                inner = data[1:-2].decode("ascii", errors="replace")
+            else:
+                inner = data.decode("ascii", errors="replace")
+
             msg_type  = inner[0:4]
             resp_code = inner[4:6]
             auth_code = inner[6:12].strip()
@@ -217,29 +231,54 @@ class PaymentTerminal:
             return PaymentResult(approved=False, amount=amount,
                                  error_message="Terminal IP adresi ayarlanmamış "
                                                "(config.json: terminal_host)")
-        port = self.tcp_port if self.tcp_port else 8400
-        try:
-            kurus = round(amount * 100)
-            with socket.create_connection(
-                    (self.host, port), timeout=TIMEOUT) as sock:
-                sock.sendall(self._build_ingenico_request(kurus))
-                # Yanıt en fazla 128 bayt
-                raw = b""
-                while True:
-                    chunk = sock.recv(128)
-                    if not chunk:
-                        break
-                    raw += chunk
-                    if ETX in raw:
-                        break
-            return self._parse_ingenico_response(raw, amount)
-        except socket.timeout:
-            return PaymentResult(approved=False, amount=amount,
-                                 error_message="Terminal zaman aşımı — "
-                                               "müşteri ödeme yapmadı veya bağlantı kesildi.")
-        except Exception as error:
-            return PaymentResult(approved=False, amount=amount,
-                                 error_message=str(error))
+        port = self.tcp_port if self.tcp_port else 6240
+        kurus = round(amount * 100)
+
+        # Önce ELPOS (length-prefixed) dene, başarısızsa legacy STX/ETX dene
+        for request_fn, label in [
+            (self._build_ingenico_request, "ELPOS"),
+            (self._build_ingenico_request_legacy, "STX/ETX"),
+        ]:
+            try:
+                with socket.create_connection(
+                        (self.host, port), timeout=CONNECT_TIMEOUT) as sock:
+                    sock.settimeout(TIMEOUT)
+                    sock.sendall(request_fn(kurus))
+                    raw = b""
+                    while True:
+                        chunk = sock.recv(256)
+                        if not chunk:
+                            break
+                        raw += chunk
+                        if ETX in raw or len(raw) >= 4:
+                            # length-prefixed yanıt için yeterli veri var mı?
+                            try:
+                                msg_len = int(raw[:4])
+                                if len(raw) >= 4 + msg_len:
+                                    break
+                            except (ValueError, IndexError):
+                                if ETX in raw:
+                                    break
+                result = self._parse_ingenico_response(raw, amount)
+                if result.approved is not False or not result.error_message.startswith("Terminal yanıt"):
+                    return result
+            except socket.timeout:
+                return PaymentResult(approved=False, amount=amount,
+                                     error_message="Terminal zaman aşımı — "
+                                                   "müşteri ödeme yapmadı veya terminal yanıt vermedi.")
+            except ConnectionRefusedError:
+                return PaymentResult(approved=False, amount=amount,
+                                     error_message=f"Bağlantı reddedildi — {self.host}:{port}\n"
+                                                   "Terminal açık mı? IP/port doğru mu?")
+            except OSError as e:
+                return PaymentResult(approved=False, amount=amount,
+                                     error_message=f"Ağ hatası: {e}\nIP: {self.host}, Port: {port}")
+            except Exception as error:
+                return PaymentResult(approved=False, amount=amount,
+                                     error_message=str(error))
+
+        return PaymentResult(approved=False, amount=amount,
+                             error_message="Terminal protokolü tanınamadı")
 
     # --------------------------------------------------------- Serial
     def _serial_payment(self, amount: float) -> PaymentResult:
@@ -299,13 +338,19 @@ class PaymentTerminal:
 
     def _test_tcp(self, host: str, port: int) -> tuple[bool, str]:
         if not host:
-            return False, "terminal_host ayarlanmamış"
+            return False, "terminal_host ayarlanmamış (config.json: terminal_host)"
         try:
-            with socket.create_connection((host, port), timeout=3):
+            with socket.create_connection((host, port), timeout=CONNECT_TIMEOUT):
                 pass
-            return True, f"TCP {host}:{port} bağlantısı başarılı."
-        except Exception as error:
-            return False, str(error)
+            return True, f"Bağlantı başarılı: {host}:{port}"
+        except ConnectionRefusedError:
+            return False, (f"Bağlantı reddedildi: {host}:{port}\n"
+                           "Terminal açık mı? Doğru port mu?")
+        except socket.timeout:
+            return False, (f"Zaman aşımı: {host}:{port}\n"
+                           "IP doğru mu? Terminal aynı ağda mı?")
+        except OSError as e:
+            return False, f"Ağ hatası: {e}\nIP: {host}, Port: {port}"
 
 
 def _ingenico_error(code: str) -> str:

@@ -5,9 +5,9 @@
   "dealer_name": "Bayi",
   "theme": "light",
   "font_scale": 1.0,
-  "terminal_mode": "manual",
+  "terminal_mode": "ingenico",
   "terminal_port": "",
   "terminal_baud": 9600,
-  "terminal_host": "",
-  "terminal_tcp_port": 8000
+  "terminal_host": "192.168.1.100",
+  "terminal_tcp_port": 6240
 }
