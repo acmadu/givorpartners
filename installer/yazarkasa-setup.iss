@@ -52,8 +52,8 @@ Name: "startup_kasa";       Description: "Windows başlangıcında Kasa'yı otom
 Source: "..\dist\yazarkasa-merkez*"; DestDir: "{app}"; Flags: ignoreversion
 ; Kasa exe (Linux: yazarkasa-kasa, Windows: yazarkasa-kasa.exe)
 Source: "..\dist\yazarkasa-kasa*";   DestDir: "{app}"; Flags: ignoreversion
-; Yapılandırma dosyası (config.json varsa üzerine yazma)
-Source: "..\config.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+; Yapılandırma dosyası
+Source: "..\config.json.example"; DestDir: "{app}"; DestName: "config.json"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
 ; Baslat Menusu

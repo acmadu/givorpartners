@@ -9,6 +9,10 @@ echo Merkez Yonetim Uygulamasi Derleniyor (Windows)...
 for /f "tokens=*" %%i in ('pyinstaller --version') do set PYVER=%%i
 echo    PyInstaller surumu: %PYVER%
 
+REM Gerekli paketleri yukle
+echo Gerekli paketler yukleniyor...
+pip install PyQt5 PyQtChart pymongo openpyxl pyinstaller --quiet
+
 REM Eski build dosyalarini temizle
 if exist build\yazarkasa-merkez rmdir /s /q build\yazarkasa-merkez
 
