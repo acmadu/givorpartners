@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -34,33 +34,11 @@ jobs:
     - name: Build Setup files
       run: .\build_setup.bat
     
-    - name: Create Release
-      uses: actions/create-release@v1
-      id: create_release
+    - name: Create Release and Upload Files
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: GivorPartners ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Upload Merkez Setup
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: installer/Output/yazarkasa-merkez-setup-v1.0.0.exe
-        asset_name: yazarkasa-merkez-setup-${{ github.ref_name }}.exe
-        asset_content_type: application/octet-stream
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Upload Kasa Setup
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: installer/Output/yazarkasa-kasa-setup-v1.0.0.exe
-        asset_name: yazarkasa-kasa-setup-${{ github.ref_name }}.exe
-        asset_content_type: application/octet-stream
+        files: |
+          installer/Output/yazarkasa-merkez-setup-v1.0.0.exe
+          installer/Output/yazarkasa-kasa-setup-v1.0.0.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
