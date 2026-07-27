@@ -5,7 +5,7 @@ datas = [
     ('common', 'common'),
     ('center', 'center'),
     ('assets', 'assets'),
-    ('config.json', '.'),
+    ('config.json.example', '.'),  # config.json.example bundled; rename to config.json on first run
     ('version.py', '.'),
 ]
 binaries = []
@@ -17,6 +17,8 @@ hiddenimports = [
 hiddenimports += collect_submodules('pymongo')
 tmp_ret = collect_all('PyQt5')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_chart = collect_all('PyQt5.QtChart')
+datas += tmp_chart[0]; binaries += tmp_chart[1]; hiddenimports += tmp_chart[2]
 
 
 a = Analysis(
