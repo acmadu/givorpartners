@@ -1,0 +1,40 @@
+name: Build Windows Setup
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install PyQt5 PyQtChart pymongo openpyxl pyinstaller
+    
+    - name: Install Inno Setup
+      run: |
+        choco install innosetup -y
+    
+    - name: Build Merkez EXE
+      run: .\build_center.bat
+    
+    - name: Build Kasa EXE
+      run: .\build_pos.bat
+    
+    - name: Build Setup files
+      run: .\build_setup.bat
+    
+    - name: Upload Setup artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: GivorPartners-Setup-v1.0.0
+        path: installer/Output/*.exe
