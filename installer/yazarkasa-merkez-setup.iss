@@ -72,7 +72,3 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
 Filename: "{app}\yazarkasa-merkez.exe"; \
   Description: "Merkez Yönetimini simdi baslat"; \
   Flags: nowait postinstall skipifsilent
-; README göster
-Filename: "{app}\README.md"; \
-  Description: "Rehberi oku"; \
-  Flags: shellexec skipifsilent unchecked

@@ -71,7 +71,3 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
 Filename: "{app}\yazarkasa-kasa.exe"; \
   Description: "Kasa'yi simdi baslat"; \
   Flags: nowait postinstall skipifsilent
-; Rehberi göster
-Filename: "{app}\BAYILERE_DEPLOYMENT_REHBERI.md"; \
-  Description: "Kurulum rehberini oku"; \
-  Flags: shellexec skipifsilent unchecked
