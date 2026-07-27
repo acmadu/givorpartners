@@ -64,15 +64,6 @@ def make_password_record(password: str) -> dict:
 
 class Database:
     def __init__(self, uri: str, database_name: str = "yazarkasa"):
-        # mongodb+srv:// DNS SRV resolution sorunları yaşanıyorsa, direkt mongodb:// kullan
-        if "mongodb+srv://" in uri:
-            uri = uri.replace("mongodb+srv://", "mongodb://", 1)
-            # .mongodb.net kaldırıp .mongodb.net:27017 yap (direct connection)
-            if ".mongodb.net" in uri and ":27017" not in uri:
-                # mongodb://user:pass@host.mongodb.net/?... → mongodb://user:pass@host.mongodb.net:27017/?...
-                uri = uri.replace(".mongodb.net/?", ".mongodb.net:27017/?")
-                uri = uri.replace(".mongodb.net?", ".mongodb.net:27017?")
-        
         self._client = MongoClient(uri, serverSelectionTimeoutMS=30000, socketTimeoutMS=30000)
         self.db = self._client[database_name]
         self.products = self.db["products"]

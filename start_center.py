@@ -36,25 +36,7 @@ def main():
     except Exception:
         pass
 
-    mongo_uri = settings["mongo_uri"]
-    # SRV DNS çözümlenemezse direkt bağlantıya geç
-    if "mongodb+srv://" in mongo_uri:
-        try:
-            import pymongo
-            client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-            client.server_info()
-        except Exception as e:
-            if "DNS" in str(e) or "NXDOMAIN" in str(e) or "does not exist" in str(e):
-                # SRV lookup başarısız - direkt bağlantı URI'ye çevir
-                mongo_uri = mongo_uri.replace("mongodb+srv://", "mongodb://", 1)
-                # Port ekle
-                if "?" in mongo_uri:
-                    host_part = mongo_uri.split("?")[0]
-                    query_part = mongo_uri.split("?")[1]
-                    if ":" not in host_part.split("@")[1]:
-                        mongo_uri = host_part + ":27017/?" + query_part
-
-    db = Database(mongo_uri, settings["database_name"])
+    db = Database(settings["mongo_uri"], settings["database_name"])
     try:
         db.verify_connection()
     except DatabaseError as error:
