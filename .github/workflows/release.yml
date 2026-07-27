@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: windows-latest
@@ -19,7 +22,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install PyQt5 PyQtChart pymongo openpyxl pyinstaller
+        pip install PyQt5 PyQtChart pymongo dnspython requests openpyxl pyinstaller
     
     - name: Install Inno Setup
       run: |

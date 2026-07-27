@@ -1,6 +1,10 @@
 # Zorunlu bağımlılıklar
 PyQt5>=5.15
+PyQtChart>=5.15
 pymongo>=4.6
+dnspython>=2.6
+requests>=2.31
+openpyxl>=3.1
 
 # Kamera ile karekod okuma (isteğe bağlı)
 # Sistem gereksinimi: zbar kütüphanesi (Fedora: sudo dnf install zbar / Windows: otomatik)

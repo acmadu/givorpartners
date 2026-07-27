@@ -13,8 +13,10 @@ hiddenimports = [
     'pymongo', 'pymongo.auth', 'pymongo.auth_oidc',
     'bson', 'PyQt5', 'PyQt5.QtChart', 'PyQt5.sip',
     'openpyxl',
+    'dns', 'dns.resolver', 'dns.rdtypes', 'dns.asyncresolver',
 ]
 hiddenimports += collect_submodules('pymongo')
+hiddenimports += collect_submodules('dns')
 tmp_ret = collect_all('PyQt5')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_chart = collect_all('PyQt5.QtChart')

@@ -15,16 +15,35 @@ from common.auto_updater import AutoUpdater
 from center.main_window import CenterWindow
 
 
+def _install_excepthook():
+    """Beklenmeyen hatalarda çirkin PyInstaller penceresi yerine
+    kullanıcı dostu uyarı gösterir."""
+    def hook(exc_type, exc_value, exc_tb):
+        if issubclass(exc_type, KeyboardInterrupt):
+            return
+        try:
+            QMessageBox.critical(
+                None, "Beklenmeyen Hata",
+                f"Bir hata oluştu:\n\n{exc_value}\n\n"
+                "Uygulamayı yeniden başlatın. Sorun devam ederse yetkiliye bildirin.")
+        except Exception:
+            pass
+    sys.excepthook = hook
+
+
 def main():
     # Windows/macOS yüksek DPI ekran desteği
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
-    
+    _install_excepthook()
+
     # Otomatik güncelleme - arka planda başlat
-    updater = AutoUpdater("yazarkasa-merkez")
-    updater.check_and_update_async()
+    try:
+        AutoUpdater("yazarkasa-merkez").check_and_update_async()
+    except Exception:
+        pass
 
     settings = load_settings()
     style.FONT_SCALE = settings.get("font_scale", 1.0)
@@ -36,27 +55,28 @@ def main():
     except Exception:
         pass
 
-    db = Database(settings["mongo_uri"], settings["database_name"])
     try:
+        db = Database(settings["mongo_uri"], settings["database_name"])
         db.verify_connection()
     except DatabaseError as error:
-        err_str = str(error)
-        if "DNS" in err_str or "NXDOMAIN" in err_str or "does not exist" in err_str:
-            msg = ("Sunucuya bağlanılamadı: DNS hatası.\n\n"
-                   "Lütfen internet bağlantınızı kontrol edin.\n"
-                   "İnternet varsa ağınızın DNS ayarlarını 8.8.8.8 olarak değiştirin.")
-        elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
-            msg = ("Sunucuya bağlanılamadı: Zaman aşımı.\n\n"
-                   "İnternet bağlantınızı kontrol edin.")
-        else:
-            msg = f"Veritabanı Hatası:\n{error}"
-        QMessageBox.critical(None, "Bağlantı Hatası", msg)
+        QMessageBox.critical(None, "Bağlantı Hatası", str(error))
+        sys.exit(1)
+    except Exception as error:
+        QMessageBox.critical(
+            None, "Bağlantı Hatası",
+            "Sunucuya bağlanılamadı.\n\n"
+            "• İnternet bağlantınızı kontrol edin\n"
+            "• Modem/router DNS ayarını 8.8.8.8 yapın\n\n"
+            f"Detay: {error}")
         sys.exit(1)
 
     window = CenterWindow(db, settings)
     window.showMaximized()
     install_event_filter(app, window)
-    check_for_update(window)
+    try:
+        check_for_update(window)
+    except Exception:
+        pass
     sys.exit(app.exec_())
 
 

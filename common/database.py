@@ -50,6 +50,33 @@ class DatabaseError(Exception):
     """Veritabanına ulaşılamadığında fırlatılır."""
 
 
+# Genel kullanıma açık DNS sunucuları — bayi ağının DNS'i SRV kaydı
+# çözemediğinde (NXDOMAIN) devreye girer.
+PUBLIC_DNS = ["8.8.8.8", "1.1.1.1", "8.8.4.4", "9.9.9.9"]
+
+
+def _use_public_dns():
+    """dnspython'un varsayılan çözümleyicisini genel DNS'lere çevirir."""
+    try:
+        import dns.resolver
+        resolver = dns.resolver.Resolver(configure=False)
+        resolver.nameservers = list(PUBLIC_DNS)
+        resolver.timeout = 5
+        resolver.lifetime = 15
+        dns.resolver.default_resolver = resolver
+        return True
+    except Exception:
+        return False
+
+
+def _reset_dns():
+    try:
+        import dns.resolver
+        dns.resolver.default_resolver = None
+    except Exception:
+        pass
+
+
 def _hash_password(password: str, salt_hex: str) -> str:
     return hashlib.pbkdf2_hmac(
         "sha256", password.encode("utf-8"),
@@ -64,7 +91,7 @@ def make_password_record(password: str) -> dict:
 
 class Database:
     def __init__(self, uri: str, database_name: str = "yazarkasa"):
-        self._client = MongoClient(uri, serverSelectionTimeoutMS=30000, socketTimeoutMS=30000)
+        self._client = self._connect(uri)
         self.db = self._client[database_name]
         self.products = self.db["products"]
         self.dealers = self.db["dealers"]
@@ -74,18 +101,54 @@ class Database:
         self.returns = self.db["returns"]
         self.notifications = self.db["notifications"]
 
+    @staticmethod
+    def _connect(uri: str):
+        """MongoClient oluşturur; DNS SRV çözümlemesi başarısız olursa
+        genel DNS sunucularıyla tekrar dener."""
+        opts = dict(serverSelectionTimeoutMS=30000,
+                    socketTimeoutMS=30000,
+                    connectTimeoutMS=20000)
+        try:
+            return MongoClient(uri, **opts)
+        except Exception as first_error:
+            if not uri.startswith("mongodb+srv://"):
+                raise DatabaseError(
+                    "Sunucu adresi çözümlenemedi.\n\n"
+                    "İnternet bağlantınızı kontrol edin.\n\n"
+                    f"Detay: {first_error}") from first_error
+            # SRV çözümlemesi başarısız → genel DNS ile tekrar dene
+            if _use_public_dns():
+                try:
+                    return MongoClient(uri, **opts)
+                except Exception:
+                    pass
+                finally:
+                    pass
+            _reset_dns()
+            raise DatabaseError(
+                "Sunucuya bağlanılamadı: DNS sorgusu başarısız.\n\n"
+                "• İnternet bağlantınızı kontrol edin\n"
+                "• Modem/router DNS ayarını 8.8.8.8 yapın\n"
+                "• Güvenlik duvarı 53/27017 portlarını engelliyor olabilir\n\n"
+                f"Detay: {first_error}") from first_error
+
     def verify_connection(self):
         """Sunucuya erişilemiyorsa DatabaseError fırlatır."""
         try:
             self._client.admin.command("ping")
+        except Exception as error:
+            raise DatabaseError(
+                "MongoDB sunucusuna bağlanılamadı.\n\n"
+                "• İnternet bağlantınızı kontrol edin\n"
+                "• Modem/router DNS ayarını 8.8.8.8 yapın\n"
+                "• Sunucu adresinin doğru olduğundan emin olun\n\n"
+                f"Detay: {error}"
+            ) from error
+        try:
             self._migrate_legacy_data()
             self._create_indexes()
-        except PyMongoError as error:
-            raise DatabaseError(
-                "MongoDB sunucusuna bağlanılamadı.\n"
-                "Sunucunun çalıştığından ve config.json içindeki "
-                f"adresin doğru olduğundan emin olun.\n\nDetay: {error}"
-            ) from error
+        except Exception:
+            pass
 
     def _migrate_legacy_data(self):
         """Eski Türkçe koleksiyon/alan adlarını İngilizce'ye taşır."""

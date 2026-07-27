@@ -104,8 +104,7 @@ class PaymentTerminal:
         if self.mode == TerminalMode.SIMULATE:
             return True, "Simülasüon modu aktif — gerçek terminal gerekmez."
         if self.mode == TerminalMode.INGENICO:
-            return self._test_tcp(self.host,
-                                  self.tcp_port if self.tcp_port else 8400)
+            return self._test_ingenico()
         if self.mode == TerminalMode.SERIAL:
             return self._test_serial()
         if self.mode == TerminalMode.TCP:
@@ -230,55 +229,60 @@ class PaymentTerminal:
         if not self.host:
             return PaymentResult(approved=False, amount=amount,
                                  error_message="Terminal IP adresi ayarlanmamış "
-                                               "(config.json: terminal_host)")
+                                               "(Ayarlar → POS Terminali)")
         port = self.tcp_port if self.tcp_port else 6240
         kurus = round(amount * 100)
+        last_error = ""
 
         # Önce ELPOS (length-prefixed) dene, başarısızsa legacy STX/ETX dene
-        for request_fn, label in [
-            (self._build_ingenico_request, "ELPOS"),
-            (self._build_ingenico_request_legacy, "STX/ETX"),
-        ]:
+        for request_fn in (self._build_ingenico_request,
+                           self._build_ingenico_request_legacy):
             try:
-                with socket.create_connection(
-                        (self.host, port), timeout=CONNECT_TIMEOUT) as sock:
-                    sock.settimeout(TIMEOUT)
-                    sock.sendall(request_fn(kurus))
-                    raw = b""
-                    while True:
-                        chunk = sock.recv(256)
-                        if not chunk:
-                            break
-                        raw += chunk
-                        if ETX in raw or len(raw) >= 4:
-                            # length-prefixed yanıt için yeterli veri var mı?
-                            try:
-                                msg_len = int(raw[:4])
-                                if len(raw) >= 4 + msg_len:
-                                    break
-                            except (ValueError, IndexError):
-                                if ETX in raw:
-                                    break
-                result = self._parse_ingenico_response(raw, amount)
-                if result.approved is not False or not result.error_message.startswith("Terminal yanıt"):
-                    return result
+                raw = self._ingenico_exchange(port, request_fn(kurus))
             except socket.timeout:
-                return PaymentResult(approved=False, amount=amount,
-                                     error_message="Terminal zaman aşımı — "
-                                                   "müşteri ödeme yapmadı veya terminal yanıt vermedi.")
+                last_error = ("Terminal zaman aşımı — müşteri ödeme yapmadı "
+                              "veya terminal yanıt vermedi.")
+                continue
             except ConnectionRefusedError:
-                return PaymentResult(approved=False, amount=amount,
-                                     error_message=f"Bağlantı reddedildi — {self.host}:{port}\n"
-                                                   "Terminal açık mı? IP/port doğru mu?")
-            except OSError as e:
-                return PaymentResult(approved=False, amount=amount,
-                                     error_message=f"Ağ hatası: {e}\nIP: {self.host}, Port: {port}")
-            except Exception as error:
-                return PaymentResult(approved=False, amount=amount,
-                                     error_message=str(error))
+                return PaymentResult(
+                    approved=False, amount=amount,
+                    error_message=(f"Bağlantı reddedildi — {self.host}:{port}\n"
+                                   "Terminal açık mı? IP/port doğru mu?"))
+            except OSError as exc:
+                return PaymentResult(
+                    approved=False, amount=amount,
+                    error_message=(f"Terminale ulaşılamadı: {exc}\n"
+                                   f"IP: {self.host}  Port: {port}"))
+            except Exception as exc:
+                last_error = str(exc)
+                continue
+
+            if not raw:
+                last_error = "Terminal yanıt vermedi"
+                continue
+            return self._parse_ingenico_response(raw, amount)
 
         return PaymentResult(approved=False, amount=amount,
-                             error_message="Terminal protokolü tanınamadı")
+                             error_message=last_error or "Terminal yanıt vermedi")
+
+    def _ingenico_exchange(self, port: int, request: bytes) -> bytes:
+        """Terminale istek gönderip yanıtı okur."""
+        with socket.create_connection(
+                (self.host, port), timeout=CONNECT_TIMEOUT) as sock:
+            sock.settimeout(TIMEOUT)
+            sock.sendall(request)
+            raw = b""
+            while True:
+                chunk = sock.recv(256)
+                if not chunk:
+                    break
+                raw += chunk
+                if ETX in raw:
+                    break
+                if len(raw) >= 4 and raw[:4].isdigit():
+                    if len(raw) >= 4 + int(raw[:4]):
+                        break
+            return raw
 
     # --------------------------------------------------------- Serial
     def _serial_payment(self, amount: float) -> PaymentResult:
@@ -338,7 +342,7 @@ class PaymentTerminal:
 
     def _test_tcp(self, host: str, port: int) -> tuple[bool, str]:
         if not host:
-            return False, "terminal_host ayarlanmamış (config.json: terminal_host)"
+            return False, "Terminal IP adresi ayarlanmamış (Ayarlar → POS Terminali)"
         try:
             with socket.create_connection((host, port), timeout=CONNECT_TIMEOUT):
                 pass
@@ -350,7 +354,30 @@ class PaymentTerminal:
             return False, (f"Zaman aşımı: {host}:{port}\n"
                            "IP doğru mu? Terminal aynı ağda mı?")
         except OSError as e:
-            return False, f"Ağ hatası: {e}\nIP: {host}, Port: {port}"
+            return False, f"Terminale ulaşılamadı: {e}\nIP: {host}  Port: {port}"
+
+    def _test_ingenico(self) -> tuple[bool, str]:
+        """Ingenico terminalini bilinen portlarda dener."""
+        if not self.host:
+            return False, "Terminal IP adresi ayarlanmamış (Ayarlar → POS Terminali)"
+        ports = [self.tcp_port] if self.tcp_port else []
+        for candidate in (6240, 8400, 4444, 9999):
+            if candidate not in ports:
+                ports.append(candidate)
+        errors = []
+        for port in ports:
+            ok, msg = self._test_tcp(self.host, port)
+            if ok:
+                if port != self.tcp_port:
+                    return True, (f"{msg}\n\nAyarlardaki portu {port} olarak "
+                                  "güncelleyin.")
+                return True, msg
+            errors.append(f"{port}: {msg.splitlines()[0]}")
+        return False, ("Terminale bağlanılamadı.\n\n"
+                       "• Terminal açık ve ağa bağlı mı?\n"
+                       "• IP adresi doğru mu?\n"
+                       "• Kasa ile terminal aynı ağda mı?\n\n"
+                       "Denenen portlar:\n" + "\n".join(errors))
 
 
 def _ingenico_error(code: str) -> str:

@@ -19,16 +19,35 @@ from pos.login_dialog import LoginDialog
 from pos.main_window import PosWindow
 
 
+def _install_excepthook():
+    """Beklenmeyen hatalarda çirkin PyInstaller penceresi yerine
+    kullanıcı dostu uyarı gösterir."""
+    def hook(exc_type, exc_value, exc_tb):
+        if issubclass(exc_type, KeyboardInterrupt):
+            return
+        try:
+            QMessageBox.critical(
+                None, "Beklenmeyen Hata",
+                f"Bir hata oluştu:\n\n{exc_value}\n\n"
+                "Uygulamayı yeniden başlatın. Sorun devam ederse yetkiliye bildirin.")
+        except Exception:
+            pass
+    sys.excepthook = hook
+
+
 def main():
     # Windows/macOS yüksek DPI ekran desteği
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
-    
+    _install_excepthook()
+
     # Otomatik güncelleme - arka planda başlat
-    updater = AutoUpdater("yazarkasa-kasa")
-    updater.check_and_update_async()
+    try:
+        AutoUpdater("yazarkasa-kasa").check_and_update_async()
+    except Exception:
+        pass
 
     settings = load_settings()
     style.FONT_SCALE = settings.get("font_scale", 1.0)
@@ -40,26 +59,27 @@ def main():
     except Exception:
         pass
 
-    db = Database(settings["mongo_uri"], settings["database_name"])
     try:
+        db = Database(settings["mongo_uri"], settings["database_name"])
         db.verify_connection()
     except DatabaseError as error:
-        err_str = str(error)
-        if "DNS" in err_str or "NXDOMAIN" in err_str or "does not exist" in err_str:
-            msg = ("Sunucuya bağlanılamadı: DNS hatası.\n\n"
-                   "Lütfen internet bağlantınızı kontrol edin.\n"
-                   "İnternet varsa ağınızın DNS ayarlarını 8.8.8.8 olarak değiştirin.")
-        elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
-            msg = ("Sunucuya bağlanılamadı: Zaman aşımı.\n\n"
-                   "İnternet bağlantınızı kontrol edin.")
-        else:
-            msg = f"Veritabanı Hatası:\n{error}"
-        QMessageBox.critical(None, "Bağlantı Hatası", msg)
+        QMessageBox.critical(None, "Bağlantı Hatası", str(error))
+        sys.exit(1)
+    except Exception as error:
+        QMessageBox.critical(
+            None, "Bağlantı Hatası",
+            "Sunucuya bağlanılamadı.\n\n"
+            "• İnternet bağlantınızı kontrol edin\n"
+            "• Modem/router DNS ayarını 8.8.8.8 yapın\n\n"
+            f"Detay: {error}")
         sys.exit(1)
 
     # ── Uzaktan yapılandırma ──
     dealer_code = settings.get("dealer_code", "")
-    rcfg = remote_config.fetch(db.db, dealer_code)
+    try:
+        rcfg = remote_config.fetch(db.db, dealer_code)
+    except Exception:
+        rcfg = {}
 
     # Tema remote_config'ten geldiyse uygula
     if rcfg.get("theme"):
@@ -67,8 +87,13 @@ def main():
         app.setStyleSheet(build_qss(rcfg["theme"]))
 
     # ── Zorunlu sürüm kontrolü (sync, uygulama açılmadan önce) ──
-    if not check_min_version(rcfg.get("min_version")):
-        sys.exit(0)
+    try:
+        if not check_min_version(rcfg.get("min_version")):
+            sys.exit(0)
+    except SystemExit:
+        raise
+    except Exception:
+        pass
 
     login = LoginDialog(db)
     if login.exec_() != QDialog.Accepted:
@@ -79,13 +104,19 @@ def main():
     install_event_filter(app, window)
 
     # ── Arkaplanda: güncelleme kontrolü + AnyDesk ID ──
-    check_for_update(window, auto_update=rcfg.get("auto_update", False),
-                     min_version=rcfg.get("min_version"))
+    try:
+        check_for_update(window, auto_update=rcfg.get("auto_update", False),
+                         min_version=rcfg.get("min_version"))
+    except Exception:
+        pass
 
     def _bg_tasks():
-        ad_id = anydesk.get_anydesk_id()
-        if ad_id:
-            remote_config.save_anydesk_id(db.db, dealer_code, ad_id)
+        try:
+            ad_id = anydesk.get_anydesk_id()
+            if ad_id:
+                remote_config.save_anydesk_id(db.db, dealer_code, ad_id)
+        except Exception:
+            pass
     threading.Thread(target=_bg_tasks, daemon=True).start()
 
     sys.exit(app.exec_())

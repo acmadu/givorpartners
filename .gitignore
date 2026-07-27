@@ -10,3 +10,8 @@ __pycache__/
 venv/
 .vscode/
 *.log
+dist.zip
+givor.xlsx
+*.pyc
+build/
+dist/

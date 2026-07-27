@@ -11,7 +11,7 @@ echo    PyInstaller surumu: %PYVER%
 
 REM Gerekli paketleri yukle
 echo Gerekli paketler yukleniyor...
-pip install PyQt5 PyQtChart pymongo openpyxl pyinstaller --quiet
+pip install PyQt5 PyQtChart pymongo dnspython requests openpyxl pyinstaller --quiet
 
 REM Eski build dosyalarini temizle
 if exist build\yazarkasa-kasa rmdir /s /q build\yazarkasa-kasa
