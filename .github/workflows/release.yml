@@ -28,6 +28,24 @@ jobs:
       run: |
         choco install innosetup -y
     
+    - name: Inject connection settings
+      shell: bash
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+      run: |
+        python - <<'PY'
+        import json, os, sys
+        uri = os.environ.get("MONGO_URI", "").strip()
+        if not uri:
+            sys.exit("HATA: MONGO_URI secret tanimli degil. "
+                     "Settings > Secrets and variables > Actions > New repository secret")
+        cfg = json.load(open("config.json.example", encoding="utf-8"))
+        cfg["mongo_uri"] = uri
+        with open("config.json.example", "w", encoding="utf-8") as fh:
+            json.dump(cfg, fh, indent=2, ensure_ascii=False)
+        print("config.json.example guncellendi")
+        PY
+    
     - name: Build Merkez EXE
       run: .\build_center.bat
     
