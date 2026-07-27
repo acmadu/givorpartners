@@ -1,0 +1,66 @@
+name: Release Windows Setup
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install PyQt5 PyQtChart pymongo openpyxl pyinstaller
+    
+    - name: Install Inno Setup
+      run: |
+        choco install innosetup -y
+    
+    - name: Build Merkez EXE
+      run: .\build_center.bat
+    
+    - name: Build Kasa EXE
+      run: .\build_pos.bat
+    
+    - name: Build Setup files
+      run: .\build_setup.bat
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      id: create_release
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: GivorPartners ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload Merkez Setup
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: installer/Output/yazarkasa-merkez-setup-v1.0.0.exe
+        asset_name: yazarkasa-merkez-setup-${{ github.ref_name }}.exe
+        asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload Kasa Setup
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: installer/Output/yazarkasa-kasa-setup-v1.0.0.exe
+        asset_name: yazarkasa-kasa-setup-${{ github.ref_name }}.exe
+        asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -38,3 +38,4 @@ jobs:
       with:
         name: GivorPartners-Setup-v1.0.0
         path: installer/Output/*.exe
+        retention-days: 30
