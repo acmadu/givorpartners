@@ -38,8 +38,8 @@ PrivilegesRequiredOverridesAllowed=dialog
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Masaüstüne kısayol oluştur"; GroupDescription: "Kısayollar:"; Flags: checked
-Name: "startup";     Description: "Windows başlangıcında otomatik başlat"; GroupDescription: "Otomatik Başlatma:"; Flags: checked
+Name: "desktopicon"; Description: "Masaustu kisayol olustur"; GroupDescription: "Kisayollar:"
+Name: "startup";     Description: "Windows baslangicindan otomatik baslat"; GroupDescription: "Otomatik Baslatma:"
 
 [Files]
 ; Kasa exe

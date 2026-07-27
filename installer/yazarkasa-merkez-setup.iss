@@ -38,8 +38,8 @@ PrivilegesRequiredOverridesAllowed=dialog
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Masaüstüne kısayol oluştur"; GroupDescription: "Kısayollar:"; Flags: checked
-Name: "startup";     Description: "Windows başlangıcında otomatik başlat"; GroupDescription: "Otomatik Başlatma:"
+Name: "desktopicon"; Description: "Masaüstüne kısayol oluştur"; GroupDescription: "Kisayollar:"
+Name: "startup";     Description: "Windows baslangicinда otomatik baslat"; GroupDescription: "Otomatik Baslatma:"
 
 [Files]
 ; Merkez exe
