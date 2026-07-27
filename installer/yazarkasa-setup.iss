@@ -80,7 +80,7 @@ Filename: "{app}\yazarkasa-merkez.exe"; \
 
 [UninstallRun]
 ; Kaldırma sırasında çalışan uygulamayı durdur
-Filename: "taskkill.exe"; Parameters: "/F /IM {#MerkezExe} /IM {#KasaExe}"; \
+Filename: "taskkill.exe"; Parameters: "/F /IM yazarkasa-merkez.exe /IM yazarkasa-kasa.exe"; \
   Flags: skipifdoesntexist runhidden
 
 [Code]
