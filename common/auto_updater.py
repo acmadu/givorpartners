@@ -11,6 +11,19 @@ from pathlib import Path
 from version import VERSION, UPDATE_CHECK_URL
 
 
+def _safe_log(message):
+    """Türkçe karakterler bazı Windows konsollarında (cp1252/charmap)
+    UnicodeEncodeError'a yol açıp arka plan thread'ini çökertebiliyor.
+    Bu yüzden print() yerine hatayı yutan güvenli bir log kullanılır."""
+    try:
+        print(message)
+    except Exception:
+        try:
+            print(message.encode("ascii", errors="replace").decode("ascii"))
+        except Exception:
+            pass
+
+
 class AutoUpdater:
     """GitHub Releases'ten otomatik güncelleme."""
     
@@ -46,7 +59,7 @@ class AutoUpdater:
                 }
             return None
         except Exception as e:
-            print(f"[AutoUpdater] Güncelleme kontrolü hatası: {e}")
+            _safe_log(f"[AutoUpdater] Guncelleme kontrolu hatasi: {e}")
             return None
     
     def _compare_versions(self, v1, v2):
@@ -79,10 +92,10 @@ class AutoUpdater:
             
             exe_path = temp_dir / exe_name
             
-            print(f"[AutoUpdater] {url} indiriliyorlavor...")
+            _safe_log(f"[AutoUpdater] {url} indiriliyor...")
             urllib.request.urlretrieve(url, exe_path)
             
-            print(f"[AutoUpdater] Yükleme başlanıyor: {exe_path}")
+            _safe_log(f"[AutoUpdater] Yukleme baslatiliyor: {exe_path}")
             subprocess.Popen(
                 [str(exe_path), "/SILENT", "/NORESTART"],
                 shell=False
@@ -92,7 +105,7 @@ class AutoUpdater:
             return True
             
         except Exception as e:
-            print(f"[AutoUpdater] Güncelleme hatası: {e}")
+            _safe_log(f"[AutoUpdater] Guncelleme hatasi: {e}")
             self.is_updating = False
             return False
     
@@ -102,13 +115,13 @@ class AutoUpdater:
             try:
                 update_info = self.check_for_updates()
                 if update_info:
-                    print(f"[AutoUpdater] Yeni version {update_info['version']} bulundu")
+                    _safe_log(f"[AutoUpdater] Yeni version {update_info['version']} bulundu")
                     if on_update_available:
                         on_update_available(update_info)
                     # Otomatik olarak indir ve yükle
                     self.download_and_install(update_info)
             except Exception as e:
-                print(f"[AutoUpdater] Async kontrol hatası: {e}")
+                _safe_log(f"[AutoUpdater] Async kontrol hatasi: {e}")
         
         thread = threading.Thread(target=_check, daemon=True)
         thread.start()
