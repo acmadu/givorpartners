@@ -1,7 +1,7 @@
 """Uygulama sürüm bilgisi."""
 
 # Bu dosya her release'de güncellenir.
-VERSION = "1.0.9"
+VERSION = "1.1.0"
 
 # Güncelleme kontrolü için sunucu URL'si.
 # GitHub Releases veya kendi sunucunuzda bir klasör olabilir.

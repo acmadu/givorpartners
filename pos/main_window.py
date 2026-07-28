@@ -10,6 +10,7 @@ Barkod okuma:
 - Kamera desteği kuruluysa "📷 Kamera" butonu ile karekod okunabilir.
 """
 import os
+import time
 from datetime import datetime
 
 from PyQt5.QtCore import QEvent, Qt, QTimer
@@ -62,6 +63,15 @@ class PosWindow(QMainWindow):
         # Sabit okuyucu desteği: tüm tuş vuruşlarını izle (bkz. eventFilter)
         QApplication.instance().installEventFilter(self)
         self.barcode_input.installEventFilter(self)
+        # Sonek (Enter/Tab) göndermeyen okuyucular için hız tabanlı yedek:
+        # tuşlar okuyucu hızında geldiyse kısa bir duraklamadan sonra otomatik okut.
+        self._scan_first_ms = 0.0
+        self._scan_last_ms = 0.0
+        self._scan_key_count = 0
+        self._scan_timer = QTimer(self)
+        self._scan_timer.setSingleShot(True)
+        self._scan_timer.setInterval(140)
+        self._scan_timer.timeout.connect(self._auto_submit_scan)
         # SKT uyarılarını göster
         self._check_expiry_alerts()
 
@@ -79,6 +89,9 @@ class PosWindow(QMainWindow):
                         and self.barcode_input.text().strip()):
                     self._barcode_scanned()
                     return True
+                text = event.text()
+                if text and text.isprintable() and not text.isspace():
+                    self._note_scan_keystroke()
                 return False
             if (QApplication.activeModalWidget() is None
                     and not self.barcode_input.hasFocus()
@@ -88,12 +101,36 @@ class PosWindow(QMainWindow):
                 if text and text.isprintable() and not text.isspace():
                     self.barcode_input.setFocus()
                     self.barcode_input.insert(text)
+                    self._note_scan_keystroke()
                     return True
                 if (event.key() in (Qt.Key_Return, Qt.Key_Enter)
                         and self.barcode_input.text().strip()):
                     self._barcode_scanned()
                     return True
         return super().eventFilter(obj, event)
+
+    def _note_scan_keystroke(self):
+        """Barkod kutusuna gelen her karakterin zamanını kaydet."""
+        now = time.monotonic() * 1000.0
+        if self._scan_key_count == 0 or (now - self._scan_last_ms) > 300:
+            self._scan_first_ms = now
+            self._scan_key_count = 0
+        self._scan_last_ms = now
+        self._scan_key_count += 1
+        self._scan_timer.start()
+
+    def _auto_submit_scan(self):
+        """Sonek göndermeyen okuyucular için otomatik okutma.
+
+        Okuyucular karakterleri ~10-30 ms aralıkla gönderir; insan yazımı
+        bundan çok daha yavaştır. Böylece elle yazım yanlışlıkla okutulmaz.
+        """
+        text = self.barcode_input.text().strip()
+        if len(text) < 6 or self._scan_key_count < 6:
+            return
+        elapsed = self._scan_last_ms - self._scan_first_ms
+        if elapsed <= self._scan_key_count * 40:
+            self._barcode_scanned()
 
     # ------------------------------------------------------------ Arayüz
     def _build_ui(self):
@@ -350,6 +387,8 @@ class PosWindow(QMainWindow):
     # ------------------------------------------------------------- Barkod
     def _barcode_scanned(self, barcode: str = ""):
         barcode = (barcode or self.barcode_input.text()).strip()
+        self._scan_timer.stop()
+        self._scan_key_count = 0
         self.barcode_input.clear()
         self.barcode_input.setFocus()
         if not barcode:

@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, date
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QWidget, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QTableWidget, QTableWidgetItem, QComboBox, QDateEdit,
     QMessageBox, QTabWidget, QTextEdit
 )
@@ -15,8 +15,13 @@ from common import style
 
 logger = logging.getLogger(__name__)
 
+# strftime('%A') i\u015fletim sistemi diline ba\u011fl\u0131d\u0131r; rapor her makinede
+# T\u00fcrk\u00e7e g\u00f6r\u00fcns\u00fcn diye g\u00fcn adlar\u0131 sabit tutulur.
+WEEKDAYS_TR = ("Pazartesi", "Salı", "Çarşamba", "Perşembe",
+               "Cuma", "Cumartesi", "Pazar")
 
-class EndOfDayReportDialog(QWidget):
+
+class EndOfDayReportDialog(QDialog):
     """Gün sonu detaylı raporu."""
 
     def __init__(self, db, dealer_code: str, parent=None):
@@ -132,7 +137,8 @@ class EndOfDayReportDialog(QWidget):
 
     def _load_report(self):
         """Raporu yükle."""
-        selected_date = self.date_input.date().toPython()
+        # PyQt5'te QDate.toPyDate() kullanılır (toPython() PySide'a özgüdür).
+        selected_date = self.date_input.date().toPyDate()
         self._load_today_report(selected_date)
 
     def _load_today_report(self, report_date: date = None):
@@ -145,22 +151,27 @@ class EndOfDayReportDialog(QWidget):
             start_time = datetime(report_date.year, report_date.month, report_date.day, 0, 0, 0)
             end_time = datetime(report_date.year, report_date.month, report_date.day, 23, 59, 59)
 
-            # Satışları getir
+            # Satışları getir — kayıtlarda tarih alanı "date" olarak tutulur.
             sales = list(self.db.sales.find({
                 "dealer_code": self.dealer_code,
-                "created_at": {"$gte": start_time, "$lte": end_time}
-            }).sort("created_at", 1))
+                "date": {"$gte": start_time, "$lte": end_time}
+            }).sort("date", 1))
 
             # Özet hesapla
-            total_sales = sum(s.get("total_amount", 0) for s in sales)
-            total_items = sum(len(s.get("items", [])) for s in sales)
+            total_sales = sum(s.get("total", 0) for s in sales)
+            total_items = sum(
+                item.get("quantity", 0)
+                for s in sales for item in s.get("items", [])
+            )
             num_transactions = len(sales)
 
-            # Ödeme türleri
+            # Ödeme türleri (tutar ve işlem adedi)
             payment_summary = {}
+            payment_counts = {}
             for sale in sales:
-                payment_type = sale.get("payment_method", "NAKİT")
-                payment_summary[payment_type] = payment_summary.get(payment_type, 0) + sale.get("total_amount", 0)
+                payment_type = sale.get("payment_type", "NAKİT")
+                payment_summary[payment_type] = payment_summary.get(payment_type, 0) + sale.get("total", 0)
+                payment_counts[payment_type] = payment_counts.get(payment_type, 0) + 1
 
             # Ürün detayları
             product_summary = {}
@@ -169,7 +180,7 @@ class EndOfDayReportDialog(QWidget):
                     barcode = item.get("barcode", "?")
                     name = item.get("name", "?")
                     qty = item.get("quantity", 0)
-                    price = item.get("price", 0)
+                    price = item.get("unit_price", 0)
                     
                     if barcode not in product_summary:
                         product_summary[barcode] = {
@@ -188,7 +199,7 @@ class EndOfDayReportDialog(QWidget):
 ╔════════════════════════════════════════════════════════════════╗
 ║                        GÜN SONU RAPORU                          ║
 ╠════════════════════════════════════════════════════════════════╣
-║ Tarih: {report_date.strftime('%d.%m.%Y (%A)')}
+║ Tarih: {report_date.strftime('%d.%m.%Y')} ({WEEKDAYS_TR[report_date.weekday()]})
 ║ Bayi: {self.dealer_code}
 ╠════════════════════════════════════════════════════════════════╣
 ║ GENEL TOPLAM
@@ -223,7 +234,7 @@ class EndOfDayReportDialog(QWidget):
             self._populate_sales_table(sales)
 
             # Ödeme tablosunu doldur
-            self._populate_payment_table(payment_summary)
+            self._populate_payment_table(payment_summary, payment_counts)
 
             # Ürün tablosunu doldur
             self._populate_product_table(product_summary)
@@ -231,6 +242,9 @@ class EndOfDayReportDialog(QWidget):
         except PyMongoError as e:
             QMessageBox.critical(self, "Hata", f"Veritabanı hatası: {str(e)}")
             logger.error(f"DB error loading report: {e}")
+        except Exception as e:
+            QMessageBox.critical(self, "Hata", f"Rapor oluşturulamadı: {e}")
+            logger.exception("Gün sonu raporu oluşturulamadı")
 
     def _populate_sales_table(self, sales: list):
         """Satış tablosunu doldur."""
@@ -238,8 +252,8 @@ class EndOfDayReportDialog(QWidget):
         
         all_items = []
         for sale in sales:
-            sale_time = sale.get("created_at", datetime.now())
-            payment_method = sale.get("payment_method", "NAKİT")
+            sale_time = sale.get("date", datetime.now())
+            payment_method = sale.get("payment_type", "NAKİT")
             
             for item in sale.get("items", []):
                 all_items.append((
@@ -247,8 +261,8 @@ class EndOfDayReportDialog(QWidget):
                     sale.get("customer_name", "Bilinmiyor"),
                     item.get("name", "?"),
                     item.get("quantity", 0),
-                    item.get("price", 0),
-                    item.get("quantity", 0) * item.get("price", 0),
+                    item.get("unit_price", 0),
+                    item.get("quantity", 0) * item.get("unit_price", 0),
                     payment_method
                 ))
 
@@ -262,15 +276,15 @@ class EndOfDayReportDialog(QWidget):
             self.sales_table.setItem(row, 5, QTableWidgetItem(f"{total:,.2f} ₺"))
             self.sales_table.setItem(row, 6, QTableWidgetItem(payment))
 
-    def _populate_payment_table(self, payment_summary: dict):
+    def _populate_payment_table(self, payment_summary: dict, payment_counts: dict):
         """Ödeme tablosunu doldur."""
         self.payment_table.setRowCount(len(payment_summary))
-        total_all = sum(payment_summary.values())
         
         for row, (payment_type, amount) in enumerate(sorted(payment_summary.items(), 
                                                             key=lambda x: x[1], 
                                                             reverse=True)):
-            count = len(list(self.db.sales.find({"payment_method": payment_type})))
+            # Adet, seçilen güne ait işlem sayısıdır (tüm geçmiş değil).
+            count = payment_counts.get(payment_type, 0)
             
             self.payment_table.setItem(row, 0, QTableWidgetItem(payment_type))
             self.payment_table.setItem(row, 1, QTableWidgetItem(f"{count}"))
