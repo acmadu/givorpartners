@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
     QMessageBox, QTabWidget, QTextEdit
 )
 from PyQt5.QtGui import QFont, QColor, QBrush, QIcon
-from PyQt5.QtChart import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis, QValueAxis
 from PyQt5.QtCore import QDate
 from pymongo.errors import PyMongoError
 from common import style
