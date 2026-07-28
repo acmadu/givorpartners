@@ -197,8 +197,8 @@ QPushButton#secondary {{
     border: 1px solid {p["border"]};
     color: {p["text"]};
     font-weight: 500;
-    min-height: {int(48 * FONT_SCALE)}px;
-    padding: 12px 18px;
+    min-height: {int(42 * FONT_SCALE)}px;
+    padding: 8px 14px;
     font-size: {base_font}px;
 }}
 QPushButton#secondary:hover {{
@@ -297,8 +297,12 @@ QTableWidget::item:selected {{
     background-color: {_rgba(p["accent"], 0.22)};
     color: {p["text"]};
 }}
+QHeaderView {{
+    background-color: {p["card"]};
+    border: none;
+}}
 QHeaderView::section {{
-    background-color: transparent;
+    background-color: {p["card"]};
     border: none;
     border-bottom: 2px solid {p["accent_dark"]};
     padding: {int(12 * FONT_SCALE)}px {int(10 * FONT_SCALE)}px;
@@ -306,6 +310,10 @@ QHeaderView::section {{
     font-size: {header_font}px;
     letter-spacing: 0.5px;
     color: {p["muted"]};
+}}
+QTableCornerButton::section {{
+    background-color: {p["card"]};
+    border: none;
 }}
 QScrollBar:vertical {{
     background: transparent;
@@ -351,6 +359,29 @@ QComboBox QAbstractItemView {{
 QScrollArea {{
     border: none;
     background: transparent;
+}}
+/* QScrollArea'nin viewport'u ve icindeki kapsayici widget varsayilan
+   palet rengini alip tema disinda beyaz bir blok olarak gorunuyordu. */
+QScrollArea > QWidget > QWidget {{
+    background: transparent;
+}}
+QPushButton#iconButton {{
+    background: transparent;
+    border: 1px solid {p["border"]};
+    border-radius: 10px;
+    padding: 0px;
+    margin: 0px;
+    min-width: 44px;
+    max-width: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    font-size: 18px;
+    color: {p["muted"]};
+}}
+QPushButton#iconButton:hover {{
+    color: {p["accent"]};
+    border-color: {p["accent"]};
+    background-color: {_rgba(p["accent"], 0.10)};
 }}
 """
 

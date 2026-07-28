@@ -11,6 +11,7 @@ Barkod okuma:
 """
 import os
 import time
+import logging
 from datetime import datetime
 
 from PyQt5.QtCore import QEvent, Qt, QTimer
@@ -39,6 +40,8 @@ from pos.customer_info_dialog import CustomerInfoDialog
 from pos.end_of_day_report import EndOfDayReportDialog
 from pos.shortcut_products_dialog import ShortcutProductDialog
 from pymongo.errors import PyMongoError
+
+logger = logging.getLogger(__name__)
 
 
 class PosWindow(QMainWindow):
@@ -145,7 +148,7 @@ class PosWindow(QMainWindow):
         dealer_label = QLabel(f"🏬  {self.dealer['name']}",
                               objectName="title")
         self.clock_label = QLabel("", objectName="subtitle")
-        self.fullscreen_button = QPushButton("⛶", objectName="fullscreenButton")
+        self.fullscreen_button = QPushButton("⛶", objectName="iconButton")
         self.fullscreen_button.setToolTip("Tam ekran (F11)")
         self.fullscreen_button.setCursor(Qt.PointingHandCursor)
         self.fullscreen_button.clicked.connect(self._toggle_fullscreen)
@@ -153,8 +156,7 @@ class PosWindow(QMainWindow):
         top.addStretch()
         top.addWidget(self.clock_label)
         # Tema değiştirici
-        self.theme_button = QPushButton("🎨")
-        self.theme_button.setFixedSize(36, 36)
+        self.theme_button = QPushButton("🎨", objectName="iconButton")
         self.theme_button.setToolTip("Tema değiştir")
         self.theme_button.setCursor(Qt.PointingHandCursor)
         self.theme_button.clicked.connect(self._cycle_theme)
@@ -207,16 +209,15 @@ class PosWindow(QMainWindow):
         left.addWidget(self.table, 1)
 
         cart_buttons = QHBoxLayout()
-        increase = QPushButton("＋ Adet")
+        increase = QPushButton("＋ Adet  (F3)")
         increase.clicked.connect(lambda: self._change_quantity(1))
-        decrease = QPushButton("－ Adet")
+        decrease = QPushButton("－ Adet  (F4)")
         decrease.clicked.connect(lambda: self._change_quantity(-1))
-        remove = QPushButton("🗑 Satırı Kaldır")
+        remove = QPushButton("🗑 Satırı Kaldır  (Del)")
         remove.clicked.connect(self._remove_row)
         cart_buttons.addWidget(increase)
         cart_buttons.addWidget(decrease)
         cart_buttons.addWidget(remove)
-        cart_buttons.addStretch()
         left.addLayout(cart_buttons)
 
         body.addLayout(left, 2)
@@ -234,13 +235,15 @@ class PosWindow(QMainWindow):
         self.last_product_label = QLabel("", objectName="subtitle")
         self.last_product_label.setWordWrap(True)
         right.addWidget(self.last_product_label)
-        right.addStretch()
 
         # ──── Ödeme butonları (Ana işlemler) ────
-        cash = QPushButton("💵  NAKİT", objectName="success")
+        cash = QPushButton("💵  NAKİT\nF1", objectName="success")
+        cash.setMinimumHeight(72)
+        cash.setCursor(Qt.PointingHandCursor)
         cash.clicked.connect(self._payment_with_customer_info("NAKİT"))
-        card = QPushButton("💳  KREDİ KARTI", objectName="primary")
-
+        card = QPushButton("💳  KREDİ KARTI\nF2", objectName="primary")
+        card.setMinimumHeight(72)
+        card.setCursor(Qt.PointingHandCursor)
         card.clicked.connect(self._payment_with_customer_info("KART"))
 
         # ──── Kısayol Ürünleri ────
@@ -248,11 +251,11 @@ class PosWindow(QMainWindow):
         shortcut_btn.clicked.connect(self._manage_shortcuts)
 
         # ──── Sipariş & Depo ────
-        order_btn = QPushButton("📋  Sipariş Ver", objectName="secondary")
+        order_btn = QPushButton("📋  Sipariş Ver  (F9)", objectName="secondary")
         order_btn.clicked.connect(self._open_order_dialog)
         receive_order_btn = QPushButton("✓  Sipariş Teslim Al", objectName="secondary")
         receive_order_btn.clicked.connect(self._receive_order)
-        stock_btn = QPushButton("📦  Depo", objectName="secondary")
+        stock_btn = QPushButton("📦  Depo  (F7)", objectName="secondary")
         stock_btn.clicked.connect(self._open_stock_dialog)
         pending_approval_btn = QPushButton("✓  Depo Onayları", objectName="secondary")
         pending_approval_btn.clicked.connect(self._open_pending_approval)
@@ -262,18 +265,18 @@ class PosWindow(QMainWindow):
         expiry_warn_btn.clicked.connect(self._open_expiry_chart)
         analytics_btn = QPushButton("📊  Ciro Raporu", objectName="secondary")
         analytics_btn.clicked.connect(self._open_analytics)
-        eod_report_btn = QPushButton("📊  Gün Sonu Raporu", objectName="secondary")
+        eod_report_btn = QPushButton("📊  Gün Sonu Raporu  (F8)", objectName="secondary")
         eod_report_btn.clicked.connect(self._open_eod_report)
 
         # ──── İadeler ────
         order_return_btn = QPushButton("↩  Sipariş İadesi", objectName="secondary")
         order_return_btn.clicked.connect(self._open_order_return_dialog)
-        refund_btn = QPushButton("🔄  Müşteri İadesi", objectName="secondary")
+        refund_btn = QPushButton("🔄  Müşteri İadesi  (F10)", objectName="secondary")
         refund_btn.clicked.connect(self._open_return_dialog)
 
         # ──── İptal ────
-        cancel_btn = QPushButton("✖  SATIŞI İPTAL ET", objectName="danger")
-        cancel_btn.clicked.connect(self._clear_cart)
+        cancel_btn = QPushButton("✖  SATIŞI İPTAL ET  (Esc)", objectName="danger")
+        cancel_btn.clicked.connect(self._cancel_sale)
 
         # ──── POS Ayarları ────
         pos_settings_btn = QPushButton("⚙  POS Terminal Ayarları", objectName="secondary")
@@ -294,7 +297,7 @@ class PosWindow(QMainWindow):
         buttons_container = QWidget()
         buttons_grid = QGridLayout(buttons_container)
         buttons_grid.setContentsMargins(0, 0, 0, 0)
-        buttons_grid.setSpacing(10)
+        buttons_grid.setSpacing(8)
         buttons_grid.setColumnStretch(0, 1)
         buttons_grid.setColumnStretch(1, 1)
         
@@ -310,7 +313,6 @@ class PosWindow(QMainWindow):
         shortcuts_layout.setSpacing(8)
         self.shortcuts_buttons = []
         self._load_and_display_shortcuts(shortcuts_layout)
-        shortcuts_layout.addStretch()
         buttons_grid.addWidget(shortcuts_panel, row, 0, 1, 2)
         row += 1
         buttons_grid.addWidget(shortcut_btn, row, 0, 1, 2)
@@ -343,15 +345,43 @@ class PosWindow(QMainWindow):
         row += 1
         buttons_grid.addWidget(pos_settings_btn, row, 0, 1, 2)
         row += 1
-        buttons_grid.addWidget(cancel_btn, row, 0, 1, 2)
-        row += 1
         buttons_grid.setRowStretch(row, 1)
-        
+
         scroll.setWidget(buttons_container)
-        right.addWidget(scroll)
+        right.addWidget(scroll, 1)
+
+        # İptal butonu kaydırma alanının D I Ş I N D A — her zaman görünür
+        # kalsın diye panelin en altına sabitlendi.
+        right.addWidget(cancel_btn)
 
         body.addWidget(right_panel, 1)
+        self._install_shortcuts(cash, card, increase, decrease, remove,
+                               stock_btn, eod_report_btn, order_btn, refund_btn,
+                               cancel_btn)
         self.barcode_input.setFocus()
+
+    def _install_shortcuts(self, cash, card, increase, decrease, remove,
+                           stock_btn, eod_report_btn, order_btn, refund_btn,
+                           cancel_btn):
+        """Yazarkasa alışkanlığına uygun F-tuşu kısayolları.
+
+        Barkod okuyucu sadece yazdırılabilir karakter gönderdiği için
+        F-tuşları eventFilter'a takılmaz, doğrudan buraya düşer.
+        """
+        bindings = [
+            (Qt.Key_F1, cash.click),
+            (Qt.Key_F2, card.click),
+            (Qt.Key_F3, increase.click),
+            (Qt.Key_F4, decrease.click),
+            (Qt.Key_Delete, remove.click),
+            (Qt.Key_F7, stock_btn.click),
+            (Qt.Key_F8, eod_report_btn.click),
+            (Qt.Key_F9, order_btn.click),
+            (Qt.Key_F10, refund_btn.click),
+            (Qt.Key_Escape, cancel_btn.click),
+        ]
+        for key, slot in bindings:
+            QShortcut(QKeySequence(key), self, slot)
 
     def _toggle_fullscreen(self):
         if self.isFullScreen():
@@ -470,7 +500,13 @@ class PosWindow(QMainWindow):
             self.camera = None
 
     def _camera_error(self, message: str):
-        QMessageBox.warning(self, "Kamera", message)
+        logger.error("Kamera hatası: %s", message)
+        QMessageBox.warning(
+            self, "Kamera Kullanılamıyor",
+            "Kamera açılamadı.\n\n"
+            "Kameranın takılı olduğundan ve başka bir programın "
+            "kullanmadığından emin olun.\n"
+            "Bu arada barkodu elle yazıp Enter'a basabilirsiniz.")
         # Buton basılı kalmasın; toggled(False) kamerayı da kapatır
         self.camera_button.setChecked(False)
 
@@ -514,6 +550,19 @@ class PosWindow(QMainWindow):
             del self.cart[key]
             self._render_cart()
         self.barcode_input.setFocus()
+
+    def _cancel_sale(self):
+        """Kasiyerin başlattığı iptal — Esc'e yanlışlıkla basılırsa onay sorar."""
+        if self.cart:
+            confirm = QMessageBox.question(
+                self, "Satışı İptal Et",
+                f"Sepetteki {len(self.cart)} kalem silinecek.\n"
+                "Satışı iptal etmek istiyor musunuz?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if confirm != QMessageBox.Yes:
+                self.barcode_input.setFocus()
+                return
+        self._clear_cart()
 
     def _clear_cart(self):
         self.cart.clear()
@@ -604,9 +653,12 @@ class PosWindow(QMainWindow):
         try:
             self.db.save_sale(sale)
         except PyMongoError as error:
-            QMessageBox.critical(
-                self, "Kayıt Hatası",
-                f"Satış kaydedilemedi — sepet korunuyor, tekrar deneyin.\n\n{error}")
+            self._show_error(
+                "Satış Kaydedilemedi",
+                "Sunucuya ulaşılamıyor, satış kaydedilemedi.\n\n"
+                "Sepetiniz duruyor — hiçbir ürün kaybolmadı.\n"
+                "İnternet bağlantınızı kontrol edip tekrar deneyin.",
+                error)
             return
         details = f"Ödeme: {payment_type}\nToplam: {total:.2f} ₺"
         if extra and extra.get("auth_code"):
@@ -620,6 +672,17 @@ class PosWindow(QMainWindow):
         self.last_product_label.setText(text)
         self.last_product_label.setStyleSheet(
             f"color: {color}; font-size: 15px;")
+
+    def _show_error(self, title: str, message: str, error=None):
+        """Kasiyere sade bir mesaj gösterir, teknik detayı log'a yazar.
+
+        Ham hata metni (PyMongoError, socket hatası, dosya yolu vb.)
+        kasiyer için anlamsız ve tedirgin edici olduğu için ekrana
+        yazılmaz; sorun çözümü için log dosyasında tutulur.
+        """
+        if error is not None:
+            logger.error("%s: %s", title, error, exc_info=True)
+        QMessageBox.critical(self, title, message)
 
     def _open_order_dialog(self):
         """Sipariş oluşturma dialogunu aç."""
@@ -661,8 +724,11 @@ class PosWindow(QMainWindow):
                     "Merkezde onay bekleniyor.")
                 self.barcode_input.setFocus()
             except PyMongoError as error:
-                QMessageBox.critical(
-                    self, "Hata", f"Sipariş gönderilemedi:\n{error}")
+                self._show_error(
+                    "Sipariş Gönderilemedi",
+                    "Sunucuya ulaşılamıyor, sipariş gönderilemedi.\n\n"
+                    "İnternet bağlantınızı kontrol edip tekrar deneyin.",
+                    error)
 
     def _receive_order(self):
         """Merkezde onaylanmış siparişi al ve stoğa ekle."""
@@ -741,7 +807,11 @@ class PosWindow(QMainWindow):
                 f"{len(selected_order.get('items', []))} kalem stoğa eklendi.")
 
         except PyMongoError as error:
-            QMessageBox.critical(self, "Hata", f"Hata:\n{error}")
+            self._show_error(
+                "Sipariş Alınamadı",
+                "Sunucuya ulaşılamıyor, sipariş stoğa eklenemedi.\n\n"
+                "İnternet bağlantınızı kontrol edip tekrar deneyin.",
+                error)
 
     def _open_stock_dialog(self):
         """Bayi depo stok dashboard'ını aç."""
@@ -801,8 +871,11 @@ class PosWindow(QMainWindow):
                     "Merkezde inceleme bekleniyor.")
                 self.barcode_input.setFocus()
             except PyMongoError as error:
-                QMessageBox.critical(
-                    self, "Hata", f"İade talebi gönderilemedi:\n{error}")
+                self._show_error(
+                    "İade Talebi Gönderilemedi",
+                    "Sunucuya ulaşılamıyor, iade talebi gönderilemedi.\n\n"
+                    "İnternet bağlantınızı kontrol edip tekrar deneyin.",
+                    error)
 
     def _open_order_return_dialog(self):
         """Sipariş iade talebi oluşturma dialogunu aç."""
@@ -825,8 +898,11 @@ class PosWindow(QMainWindow):
                     "Merkezde inceleme bekleniyor.")
                 self.barcode_input.setFocus()
             except PyMongoError as error:
-                QMessageBox.critical(
-                    self, "Hata", f"Sipariş iade talebi gönderilemedi:\n{error}")
+                self._show_error(
+                    "Sipariş İadesi Gönderilemedi",
+                    "Sunucuya ulaşılamıyor, sipariş iadesi gönderilemedi.\n\n"
+                    "İnternet bağlantınızı kontrol edip tekrar deneyin.",
+                    error)
 
     def _check_expiry_alerts(self):
         """Başlangıçta SKT uyarılarını kontrol et."""
